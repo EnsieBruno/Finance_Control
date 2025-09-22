@@ -24,7 +24,7 @@ JavaScript: Para a lógica do sistema e persistência dos dados no localStorage.
 🚀 Como Usar
 Clone este repositório para a sua máquina:
 
-git clone [https://github.com/seu-usuario/nome-do-repositorio.git](https://github.com/brunoensie/minhaVida)
+git clone [https://github.com/seu-usuario/nome-do-repositorio.git](https://github.com/EnsieBruno/MinhaVida)
 
 Abra o arquivo index.html em qualquer navegador web.
 
