@@ -42,33 +42,33 @@ padding: 0;
 body {
 background: var(--body-bg);
 color: var(--text-color);
-padding: 24px;
+padding: 20px;
 line-height: 1.6;
 }
 
 .container {
-max-width: 1200px;
+max-width: 100vw;
 margin: 0 auto;
 display: flex;
 flex-direction: column;
-gap: 32px;
+gap: 20px;
 }
 
 /* Typography & General Styles */
 h1 {
-font-size: 32px;
-font-weight: 700;
+font-size: 2em;
+font-weight: 800;
 color: var(--purple-main);
 }
 
 h2 {
-font-size: 24px;
+font-size: 1.2rem;
 font-weight: 600;
 margin-bottom: 16px;
 }
 
 h3 {
-font-size: 16px;
+font-size: 1rem;
 font-weight: 500;
 color: var(--gray-medium);
 margin: 0;
@@ -84,13 +84,13 @@ header {
 display: flex;
 justify-content: space-between;
 align-items: center;
-margin-bottom: 24px;
+margin-bottom: 15px;
 }
 
 .header-actions {
 display: flex;
 align-items: center;
-gap: 16px;
+gap: 10px;
 }
 
 .btn-icon {
@@ -105,7 +105,8 @@ transition: transform 0.2s;
 .main-grid {
 display: grid;
 grid-template-columns: 1.5fr 1fr;
-gap: 24px;
+gap: 5px;
+margin-bottom: 5px;
 }
 
 .card {
@@ -125,7 +126,8 @@ text-align: center;
 
 .balance-container {
 display: flex;
-flex-direction: column;
+flex-direction: row;
+justify-content: space-around;
 gap: 24px;
 margin-top: 24px;
 }
