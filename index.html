@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Gastos - Simplificado</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Controle de Gastos</h1>
+            <div class="header-actions">
+                <div class="muted">Dados salvos no seu navegador</div>
+                <button id="themeToggle" class="btn-icon">
+                    <span id="theme-icon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <div class="main-grid">
+                <div class="card form-card">
+                    <h2>Adicionar Gasto</h2>
+                    <form id="addForm" autocomplete="off">
+                        <div class="form-group full-width">
+                            <label for="desc">Descrição</label>
+                            <input id="desc" type="text" placeholder="Ex: Aluguel, Netflix..." required />
+                        </div>
+                        <div class="form-group">
+                            <label for="value">Valor (R$)</label>
+                            <input id="value" type="text" class="money-input" placeholder="0,00" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="source">Fonte</label>
+                            <select id="source" required>
+                                <option value="salario">Salário</option>
+                                <option value="caju">Caju</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn primary">Adicionar</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card summary-card">
+                    <h2>Resumo Financeiro</h2>
+                    <div class="balance-container">
+                        <div class="balance-item">
+                            <h3>Salário</h3>
+                            <input type="text" id="salarioInput" class="balance-input" autocomplete="off" />
+                            <div class="balance-info">
+                                <span class="muted">Saldo restante:</span>
+                                <div class="balance-value" id="salarioRestante">R$ 0,00</div>
+                            </div>
+                        </div>
+                        <div class="balance-item">
+                            <h3>Caju</h3>
+                            <input type="text" id="cajuInput" class="balance-input" autocomplete="off" />
+                            <div class="balance-info">
+                                <span class="muted">Saldo restante:</span>
+                                <div class="balance-value" id="cajuRestante">R$ 0,00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card tables-section">
+                <div class="table-header">
+                    <h2>Meus Gastos</h2>
+                    <div class="table-actions">
+                        <button id="editAllBtn" class="btn ghost">Editar</button>
+                        <button id="saveAllBtn" class="btn primary" style="display: none;">Salvar</button>
+                        <button id="cancelEditBtn" class="btn ghost" style="display: none;">Cancelar</button>
+                        <button id="btnClear" class="btn danger-ghost">Limpar tudo</button>
+                    </div>
+                </div>
+                <table id="gastosTable">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Fonte</th>
+                            <th>Pago</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </main>
+
+        <footer>
+            <div class="muted">Último salvamento: <span id="lastSaved">—</span></div>
+        </footer>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
