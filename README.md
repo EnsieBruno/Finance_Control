@@ -38,3 +38,5 @@ style.css: Responsável pelo design visual, tipografia, espaçamento e o tema es
 main.js: Contém toda a lógica de manipulação do estado, interação com a interface e salvamento de dados.
 
 Diretos reservados ao Bruno Alves da Silva 2025, permitido cópias.
+
+Projeto de teste, sem fins lucrativos. 
