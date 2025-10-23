@@ -259,7 +259,7 @@ input:focus, select:focus {
 
 .floating-btn {
     position: fixed;
-    bottom: 65px;
+    bottom: 68px;
     right: 40px;
     z-index: 1000;
     cursor: pointer;
@@ -469,4 +469,5 @@ footer {
     #removeSelectedBtn {
         width: 100%;
     }
+
 }
