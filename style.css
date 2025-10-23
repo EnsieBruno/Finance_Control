@@ -471,14 +471,8 @@ footer {
     #removeSelectedBtn {
         width: 100%;
     }
-<<<<<<< HEAD
-    
     /* AJUSTE: Aumenta a margem inferior em telas menores */
     .container {
         margin-bottom: 140px; 
     }
 }
-=======
-
-}
->>>>>>> bfcff9c98b02f19974817601181155fad11080b1
