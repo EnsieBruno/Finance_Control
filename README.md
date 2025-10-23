@@ -1,42 +1,53 @@
-💰 Controle de Gastos - Simplificado
-Um sistema simples e elegante para controle de gastos pessoais, com foco na usabilidade e na experiência de usuário. Desenvolvido para gerenciar salários, vales (Caju) e despesas diárias, com dados salvos localmente no navegador e uma interface moderna inspirada no Nubank.
+# 💰 Controle de Gastos
 
-✨ Funcionalidades
-Controle de Saldo: Gerencie o saldo inicial do seu salário e Caju em campos editáveis.
+Um sistema simples e elegante para controle de gastos pessoais, focado em alta usabilidade e persistência de dados local (via `localStorage`). Ideal para gerenciar diferentes fontes de renda (Salário e Vale/Benefício) e manter o saldo final sempre atualizado.
 
-Adicionar Gastos: Registre despesas com descrição, valor e fonte (salário ou Caju).
+## ✨ Funcionalidades Principais
 
-Marcação de Pagamento: Marque gastos como "pagos" para que o saldo restante seja atualizado automaticamente.
+* **Controle de Saldo Dinâmico:** Gerencie os valores iniciais de **Salário** e **Vale** (Caju, Benefício) em campos editáveis. O **Saldo Final** é calculado em tempo real com base nos valores de entrada e nos gastos marcados como *pagos*.
 
-Edição em Lote: Altere múltiplos gastos de uma vez clicando em "Editar" na tabela.
+* **Registro de Despesas:** Adicione novos gastos com:
+    * Descrição
+    * Valor
+    * Tipo (Fixo ou Variável)
+    * Fonte (Salário ou Vale)
+    * Dia de Vencimento
 
-Modo Escuro: Alterne para o modo escuro para uma visualização mais confortável.
+* **Marcação de Pagamento:** Use checkboxes para marcar despesas como "pagas" e veja o Saldo Final ser atualizado automaticamente.
 
-Limpar Dados: Apague todos os dados salvos com um único botão.
+* **Ações em Lote (Tabela):**
+    * **Seleção em Massa:** Selecione múltiplos gastos (individualmente ou via checkbox no cabeçalho) para visualizar o **Total Selecionado** e **Remover** todos de uma vez.
+    * **Marcar Todos como Pagos/Não Pagos:** Checkboxes no cabeçalho de cada tabela permitem mudar o status de pagamento de todos os itens daquela fonte.
+    * **Edição em Massa:** Utilize o botão "Editar" para transformar as linhas da tabela em campos de formulário, permitindo a edição rápida de múltiplos itens antes de salvar.
+    * **Persistência de Dados:** Todos os dados (gastos, saldos iniciais e tema) são salvos de forma segura no `localStorage` do navegador.
+    * **Modo Escuro:** Alternância de tema para uma visualização mais confortável, com o tema preferido sendo salvo.
+    * **Limpar Tudo:** Um botão de segurança para apagar todos os dados e começar do zero.
 
-🛠️ Tecnologias
-HTML: Para a estrutura da página.
+## 🛠️ Tecnologias
 
-CSS: Para o estilo moderno e responsivo, com suporte a modo escuro.
+O projeto é uma Single Page Application (SPA) minimalista, construída com tecnologias web puras, garantindo leveza e rapidez.
 
-JavaScript: Para a lógica do sistema e persistência dos dados no localStorage.
+* **HTML:** Estrutura semântica da aplicação.
+* **CSS:** Estilização moderna, responsiva, com uso de [CSS Variables](https://developer.mozilla.org/pt-BR/docs/Web/CSS/Using_CSS_custom_properties) para o suporte ao **Modo Escuro**.
+* **JavaScript (main.js):** Toda a lógica de estado, manipulação do DOM, formatação de moeda, persistência (`localStorage`) e tratamento de eventos.
 
-🚀 Como Usar
-Clone este repositório para a sua máquina:
+## 🚀 Como Usar
 
-Abra o arquivo index.html em qualquer navegador web.
+Não é necessária nenhuma instalação ou configuração complexa!
 
-Comece a usar a interface para adicionar e controlar seus gastos.
+1.  **Clone o Repositório:**
+    ```bash
+    git clone https://github.com/EnsieBruno/Finance_Control.git
+    ```
+2.  **Abra o `index.html`:**
+    Basta dar um duplo clique no arquivo `index.html` e ele abrirá em seu navegador web preferido.
+3.  **Comece a Gerenciar:**
+    * Insira seus saldos iniciais de Salário e Vale.
+    * Clique no botão flutuante **"+ Adicionar Conta"** para registrar suas despesas.
+    * Marque os itens como pagos e acompanhe o Saldo Final.
 
-Não é necessário nenhuma configuração ou instalação, o projeto funciona diretamente no seu navegador.
+---
 
-📁 Estrutura do Projeto
-index.html: Contém toda a estrutura e o layout da aplicação.
+*Direitos reservados ao Bruno Alves da Silva 2025, permitido cópias.*
 
-style.css: Responsável pelo design visual, tipografia, espaçamento e o tema escuro.
-
-main.js: Contém toda a lógica de manipulação do estado, interação com a interface e salvamento de dados.
-
-Diretos reservados ao Bruno Alves da Silva 2025, permitido cópias.
-
-Projeto de teste, sem fins lucrativos. 
+*Projeto de teste, sem fins lucrativos.*
