@@ -31,11 +31,16 @@ const refs = {
     openAddFormBtn: $('#openAddFormBtn'), 
     closeAddFormBtn: $('#closeAddFormBtn'), 
     addFormCard: $('#addFormCard'),
-    // NOVOS: Referências para o totalizador e remoção em massa
+    // Referências para o totalizador e remoção em massa
     selectionActions: $('#selectionActions'),
     selectedTotalEl: $('#selectedTotal'),
     selectedCountEl: $('#selectedCount'),
     removeSelectedBtn: $('#removeSelectedBtn'),
+    // NOVOS: Checkboxes do Cabeçalho
+    selectAllSalario: $('#selectAllSalario'),
+    markPaidAllSalario: $('#markPaidAllSalario'),
+    selectAllVale: $('#selectAllVale'),
+    markPaidAllVale: $('#markPaidAllVale'),
 };
 
 /* --- Funções Auxiliares --- */
@@ -105,18 +110,86 @@ function loadState() {
     }
 }
 
+/* --- Funções de Ação em Massa do Cabeçalho --- */
+
+function handleSelectAll(source, isChecked) {
+    const sourceGastos = state.gastos.filter(g => g.source === source);
+    
+    sourceGastos.forEach(gasto => {
+        const isSelected = selectedGastosIds.includes(gasto.id);
+        if (isChecked && !isSelected) {
+            selectedGastosIds.push(gasto.id);
+        } else if (!isChecked && isSelected) {
+            selectedGastosIds = selectedGastosIds.filter(id => id !== gasto.id);
+        }
+    });
+
+    // Re-renderiza para atualizar os checkboxes nas linhas
+    render(); 
+}
+
+function handleMarkPaidAll(source, isChecked) {
+    const sourceGastos = state.gastos.filter(g => g.source === source);
+    
+    sourceGastos.forEach(gasto => {
+        gasto.paid = isChecked;
+    });
+
+    // Salva e re-renderiza para atualizar o Saldo Final e os checkboxes nas linhas
+    saveState();
+    render(); 
+}
+
+// Funções específicas para os Event Listeners (necessário para evitar loop infinito na render)
+const handleSelectAllSalario = (e) => handleSelectAll('salario', e.target.checked);
+const handleMarkPaidAllSalario = (e) => handleMarkPaidAll('salario', e.target.checked);
+const handleSelectAllVale = (e) => handleSelectAll('vale', e.target.checked);
+const handleMarkPaidAllVale = (e) => handleMarkPaidAll('vale', e.target.checked);
+
+
 /* --- Renderização da Interface --- */
+// NOVO: Função para atualizar o estado do checkbox do cabeçalho
+function updateHeaderCheckboxes(source, type) {
+    const isSalario = source === 'salario';
+    const allGastos = state.gastos.filter(g => g.source === source);
+    
+    if (type === 'select') {
+        const allChecks = $$(`#${source}Table tbody .select-check`);
+        const allChecked = Array.from(allChecks).every(chk => chk.checked);
+        const headerChk = isSalario ? refs.selectAllSalario : refs.selectAllVale;
+        
+        // Remove e Adiciona o listener para evitar loops de renderização
+        headerChk.removeEventListener('change', isSalario ? handleSelectAllSalario : handleSelectAllVale);
+        headerChk.checked = allChecks.length > 0 && allChecked;
+        headerChk.addEventListener('change', isSalario ? handleSelectAllSalario : handleSelectAllVale);
+        headerChk.disabled = allChecks.length === 0 || isEditing;
+    } 
+    
+    if (type === 'paid') {
+        const allChecks = $$(`#${source}Table tbody .status-check`);
+        const allPaid = Array.from(allChecks).every(chk => chk.checked);
+        const headerChk = isSalario ? refs.markPaidAllSalario : refs.markPaidAllVale;
+        
+        // Remove e Adiciona o listener para evitar loops de renderização
+        headerChk.removeEventListener('change', isSalario ? handleMarkPaidAllSalario : handleMarkPaidAllVale);
+        headerChk.checked = allChecks.length > 0 && allPaid;
+        headerChk.addEventListener('change', isSalario ? handleMarkPaidAllSalario : handleMarkPaidAllVale);
+        headerChk.disabled = allChecks.length === 0 || isEditing;
+    }
+}
+
+
 function createTableRow(gasto) {
     const tr = document.createElement('tr');
     tr.dataset.id = gasto.id;
 
-    // NOVO: Checkbox de Seleção
+    // Coluna Sel. (Checkbox de Seleção)
     const tdSelect = document.createElement('td');
     const chkSelect = document.createElement('input');
     chkSelect.type = 'checkbox';
     chkSelect.className = 'select-check';
-    chkSelect.checked = selectedGastosIds.includes(gasto.id); // Sincroniza com o estado
-    chkSelect.disabled = isEditing; // Desabilita na edição em massa
+    chkSelect.checked = selectedGastosIds.includes(gasto.id);
+    chkSelect.disabled = isEditing;
     chkSelect.addEventListener('change', () => {
         if (chkSelect.checked) {
             if (!selectedGastosIds.includes(gasto.id)) {
@@ -125,7 +198,8 @@ function createTableRow(gasto) {
         } else {
             selectedGastosIds = selectedGastosIds.filter(id => id !== gasto.id);
         }
-        updateSelectionTotal(); // ATUALIZA O TOTALIZADOR
+        updateSelectionTotal(); 
+        updateHeaderCheckboxes(gasto.source, 'select'); 
     });
     tdSelect.appendChild(chkSelect);
     tr.appendChild(tdSelect); 
@@ -146,16 +220,18 @@ function createTableRow(gasto) {
     tdDueDay.innerHTML = `<span class="data-field" data-key="dueDay">${gasto.dueDay || '-'}</span>`;
     tr.appendChild(tdDueDay);
 
+    // Coluna Pago
     const tdPaid = document.createElement('td');
     const chk = document.createElement('input');
     chk.type = 'checkbox';
     chk.className = 'status-check';
     chk.checked = gasto.paid;
-    chk.disabled = isEditing; // Desabilita na edição em massa
+    chk.disabled = isEditing;
     chk.addEventListener('change', () => {
         gasto.paid = chk.checked;
         saveState();
         render(); // Re-renderiza para atualizar o Saldo Final
+        updateHeaderCheckboxes(gasto.source, 'paid'); 
     });
     tdPaid.appendChild(chk);
     tr.appendChild(tdPaid);
@@ -165,11 +241,10 @@ function createTableRow(gasto) {
     const btnDelete = document.createElement('button');
     btnDelete.className = 'btn danger-ghost small';
     btnDelete.textContent = 'Remover';
-    btnDelete.style.display = isEditing ? 'none' : 'inline-block'; // Esconde na edição em massa
+    btnDelete.style.display = isEditing ? 'none' : 'inline-block';
     btnDelete.addEventListener('click', () => {
         if (confirm(`Remover "${gasto.desc}"?`)) {
             state.gastos = state.gastos.filter(x => x.id !== gasto.id);
-            // Garante que o ID seja removido se estiver selecionado
             selectedGastosIds = selectedGastosIds.filter(id => id !== gasto.id); 
             saveState();
             render();
@@ -182,11 +257,11 @@ function createTableRow(gasto) {
 }
 
 function render() {
-    // 1. Atualiza o estado das entradas a partir dos inputs (Importante para o saveState e cálculos)
+    // 1. Atualiza o estado das entradas
     state.salarioInicial = unformatCurrency(refs.salarioInput.value) || 0;
     state.valeInicial = unformatCurrency(refs.valeInput.value) || 0;
 
-    // 2. Cálculo do Saldo Final (Entradas Totais - Gastos PAGOS)
+    // 2. Cálculo do Saldo Final
     const entradasTotais = state.salarioInicial + state.valeInicial;
     const gastosPagos = state.gastos
         .filter(g => g.paid)
@@ -197,7 +272,7 @@ function render() {
     refs.saldoFinalEl.textContent = fmt(saldoFinal);
     refs.saldoFinalEl.style.color = saldoFinal >= 0 ? 'var(--purple-main)' : 'var(--red-alert)';
 
-    // 3. Renderização das Tabelas (Mantida a separação por Fonte)
+    // 3. Renderização das Tabelas
     const gastosSalario = state.gastos.filter(g => g.source === 'salario');
     const gastosVale = state.gastos.filter(g => g.source === 'vale');
 
@@ -210,14 +285,15 @@ function render() {
     refs.valeTableBody.innerHTML = '';
     gastosVale.forEach(gasto => refs.valeTableBody.appendChild(createTableRow(gasto)));
 
-    // 4. Salva o estado após a renderização
+    // 4. Salva o estado e Atualiza o totalizador/checkboxes de cabeçalho
     saveState();
-    
-    // NOVO: Atualiza o totalizador após a renderização das tabelas
+    updateHeaderCheckboxes('salario', 'select');
+    updateHeaderCheckboxes('salario', 'paid');
+    updateHeaderCheckboxes('vale', 'select');
+    updateHeaderCheckboxes('vale', 'paid');
     updateSelectionTotal(); 
 }
 
-// NOVO: Função para atualizar o total e a visibilidade da barra flutuante
 function updateSelectionTotal() {
     const selectedGastos = state.gastos.filter(g => selectedGastosIds.includes(g.id));
     const total = selectedGastos.reduce((sum, gasto) => sum + gasto.value, 0);
@@ -227,14 +303,13 @@ function updateSelectionTotal() {
     refs.selectedCountEl.textContent = `${count} conta${count !== 1 ? 's' : ''} selecionada${count !== 1 ? 's' : ''}`;
     refs.removeSelectedBtn.textContent = `Remover Selecionada${count !== 1 ? 's' : ''} (${count})`;
 
-    if (count > 0 && !isEditing) { // Oculta a barra durante a edição em massa
+    if (count > 0 && !isEditing) {
         refs.selectionActions.classList.remove('hidden');
     } else {
         refs.selectionActions.classList.add('hidden');
     }
 }
 
-// NOVO: Função para remover os gastos selecionados
 function removeSelectedGastos() {
     if (selectedGastosIds.length === 0) return;
 
@@ -246,7 +321,7 @@ function removeSelectedGastos() {
     }
 }
 
-// Lógica de Edição em Massa (Refatorada para o novo layout e para a nova coluna)
+// Lógica de Edição em Massa
 function toggleEditMode(enable) {
     isEditing = enable;
 
@@ -254,28 +329,28 @@ function toggleEditMode(enable) {
     refs.saveAllBtn.style.display = enable ? 'inline-block' : 'none';
     refs.cancelEditBtn.style.display = enable ? 'inline-block' : 'none';
     refs.btnClear.style.display = enable ? 'none' : 'inline-block';
-    refs.openAddFormBtn.style.display = enable ? 'none' : 'block'; // Esconde o botão flutuante na edição
-    refs.selectionActions.classList.add('hidden'); // Oculta a barra de seleção na edição
+    refs.openAddFormBtn.style.display = enable ? 'none' : 'block';
+    refs.selectionActions.classList.add('hidden');
 
     const allGastos = $$('#salarioTable tbody tr, #valeTable tbody tr');
     allGastos.forEach((tr) => {
         const gasto = state.gastos.find(g => g.id === tr.dataset.id);
         const tds = tr.querySelectorAll('td');
         
-        // NOVO: Coluna Sel. (tds[0])
+        // Coluna Sel.
         tds[0].querySelector('.select-check').disabled = enable;
 
-        // Descrição (tds[1])
+        // Descrição
         tds[1].innerHTML = enable
             ? `<input type="text" class="edit-mode" data-key="desc" value="${gasto.desc}">`
             : `<span class="data-field" data-key="desc">${gasto.desc}</span>`;
 
-        // Valor (tds[2])
+        // Valor
         tds[2].innerHTML = enable
             ? `<input type="text" class="edit-mode money-input" data-key="value" value="${fmt(gasto.value)}">`
             : `<span class="data-field" data-key="value">${fmt(gasto.value)}</span>`;
 
-        // Tipo (tds[3])
+        // Tipo
         tds[3].innerHTML = enable
             ? `<select class="edit-mode edit-mode-select" data-key="type">
                 <option value="fixo" ${gasto.type === 'fixo' ? 'selected' : ''}>Fixo</option>
@@ -283,17 +358,23 @@ function toggleEditMode(enable) {
               </select>`
             : `<span class="data-field" data-key="type">${gasto.type === 'fixo' ? 'Fixo' : 'Variável'}</span>`;
 
-        // Vencimento (tds[4])
+        // Vencimento
         tds[4].innerHTML = enable
             ? `<input type="number" min="1" max="31" class="edit-mode" data-key="dueDay" value="${gasto.dueDay || ''}">`
             : `<span class="data-field" data-key="dueDay">${gasto.dueDay || '-'}</span>`;
 
-        // Paid Checkbox (tds[5])
+        // Coluna Pago
         tds[5].querySelector('.status-check').disabled = enable;
 
-        // Ações (tds[6]) - O botão 'Remover' já é tratado em createTableRow
+        // Ações 
         tds[6].style.display = enable ? 'none' : 'table-cell';
     });
+    
+    // Desabilita os checkboxes de cabeçalho
+    refs.selectAllSalario.disabled = enable;
+    refs.markPaidAllSalario.disabled = enable;
+    refs.selectAllVale.disabled = enable;
+    refs.markPaidAllVale.disabled = enable;
 
     if (enable) {
         $$('.money-input').forEach(input => {
@@ -306,11 +387,11 @@ function saveAllChanges() {
     const allGastos = $$('#salarioTable tbody tr, #valeTable tbody tr');
     allGastos.forEach((tr) => {
         const gasto = state.gastos.find(g => g.id === tr.dataset.id);
-        // Note que os índices dos TDs mudaram! [1] Desc, [2] Valor, [3] Tipo, [4] Vencimento
-        const descInput = tr.querySelectorAll('td')[1].querySelector('[data-key="desc"]');
-        const valueInput = tr.querySelectorAll('td')[2].querySelector('[data-key="value"]');
-        const typeSelect = tr.querySelectorAll('td')[3].querySelector('[data-key="type"]');
-        const dueDayInput = tr.querySelectorAll('td')[4].querySelector('[data-key="dueDay"]');
+        const tds = tr.querySelectorAll('td');
+        const descInput = tds[1].querySelector('[data-key="desc"]');
+        const valueInput = tds[2].querySelector('[data-key="value"]');
+        const typeSelect = tds[3].querySelector('[data-key="type"]');
+        const dueDayInput = tds[4].querySelector('[data-key="dueDay"]');
 
         if (descInput) gasto.desc = descInput.value.trim();
         if (valueInput) gasto.value = unformatCurrency(valueInput.value);
@@ -325,7 +406,7 @@ function saveAllChanges() {
 
 /* --- Lógica de Eventos --- */
 function setupEventListeners() {
-    // 1. Adicionar Gasto (Lógica do Modal/Floating Card)
+    // 1. Adicionar Gasto (Modal)
     refs.openAddFormBtn.addEventListener('click', () => {
         refs.addFormCard.classList.remove('hidden');
     });
@@ -347,11 +428,11 @@ function setupEventListeners() {
         };
         state.gastos.push(novoGasto);
         refs.addForm.reset();
-        refs.addFormCard.classList.add('hidden'); // Fecha o modal após salvar
+        refs.addFormCard.classList.add('hidden');
         render();
     });
 
-    // 2. Entradas (Salário/Vale) - Disparam renderização no 'input'
+    // 2. Entradas (Salário/Vale)
     refs.salarioInput.addEventListener('input', render);
     refs.valeInput.addEventListener('input', render);
     
@@ -360,10 +441,9 @@ function setupEventListeners() {
     moneyInputs.forEach(input => {
         input.addEventListener('input', formatCurrencyInput);
         
-        // Adiciona um listener blur para formatar R$ 0,00 se ficar vazio
         input.addEventListener('blur', (e) => {
             if (e.target.value.trim() === '' || unformatCurrency(e.target.value) === 0) {
-                 e.target.value = ''; // Mantém vazio ou seta para 0
+                 e.target.value = '';
                  render();
             }
         });
@@ -373,7 +453,6 @@ function setupEventListeners() {
     refs.btnClear.addEventListener('click', () => {
         if (confirm('Atenção! Esta ação irá apagar todos os gastos e saldos. Deseja continuar?')) {
             localStorage.removeItem(STORAGE_KEY);
-            // Também remove a chave antiga, caso o usuário esteja na fase de migração/teste
             localStorage.removeItem(OLD_STORAGE_KEY); 
             location.reload();
         }
@@ -392,11 +471,17 @@ function setupEventListeners() {
     refs.saveAllBtn.addEventListener('click', saveAllChanges);
     refs.cancelEditBtn.addEventListener('click', () => {
         toggleEditMode(false);
-        render(); // Reverte e re-renderiza
+        render();
     });
     
-    // NOVO: Lógica de Remoção em Massa
+    // 7. Lógica de Remoção em Massa
     refs.removeSelectedBtn.addEventListener('click', removeSelectedGastos);
+    
+    // 8. Checkboxes do Cabeçalho (Select/Paid All)
+    refs.selectAllSalario.addEventListener('change', handleSelectAllSalario);
+    refs.markPaidAllSalario.addEventListener('change', handleMarkPaidAllSalario);
+    refs.selectAllVale.addEventListener('change', handleSelectAllVale);
+    refs.markPaidAllVale.addEventListener('change', handleMarkPaidAllVale);
 }
 
 /* --- Inicialização --- */

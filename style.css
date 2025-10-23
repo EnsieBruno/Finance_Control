@@ -54,6 +54,8 @@ body {
     flex-direction: column;
     gap: 20px;
     position: relative; 
+    /* AJUSTE: Adiciona margem inferior para o footer e a barra de ações flutuante */
+    margin-bottom: 80px; 
 }
 
 /* Typography & General Styles */
@@ -259,7 +261,7 @@ input:focus, select:focus {
 
 .floating-btn {
     position: fixed;
-    bottom: 65px;
+    bottom: 68px;
     right: 40px;
     z-index: 1000;
     cursor: pointer;
@@ -369,7 +371,7 @@ tbody td {
     padding: 8px 12px;
 }
 
-.status-check, .select-check {
+.status-check, .select-check, .mark-paid-all-check, .select-all-check {
     width: 22px;
     height: 22px;
     cursor: pointer;
@@ -398,7 +400,7 @@ footer {
     text-align: right;
 }
 
-/* NOVO: Barra de Ações de Seleção Flutuante */
+/* Barra de Ações de Seleção Flutuante */
 .selection-actions {
     position: fixed;
     bottom: 0;
@@ -468,5 +470,10 @@ footer {
     }
     #removeSelectedBtn {
         width: 100%;
+    }
+    
+    /* AJUSTE: Aumenta a margem inferior em telas menores */
+    .container {
+        margin-bottom: 140px; 
     }
 }

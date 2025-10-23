@@ -26,6 +26,7 @@
                 <div class="balance-header">
                     <h2>Resumo Financeiro</h2>
                     <div class="balance-total-display">
+                        <div class="muted">Último salvamento: <span id="lastSaved">—</span></div>
                         <span class="muted">Saldo Final</span>
                         <div class="balance-value" id="saldoFinal">R$ 0,00</div>
                     </div>
@@ -59,12 +60,12 @@
                         <table id="salarioTable">
                             <thead>
                                 <tr>
-                                    <th>Sel.</th>
+                                    <th><input type="checkbox" id="selectAllSalario" class="select-all-check" title="Selecionar Todos"/></th>
                                     <th>Descrição</th>
                                     <th>Valor</th>
                                     <th>Tipo</th>
                                     <th>Vencimento</th>
-                                    <th>Pago</th>
+                                    <th><input type="checkbox" id="markPaidAllSalario" class="mark-paid-all-check" title="Marcar Todos como Pagos"/></th>
                                     <th class="actions-cell">Ação</th>
                                 </tr>
                             </thead>
@@ -76,12 +77,12 @@
                         <table id="valeTable">
                             <thead>
                                 <tr>
-                                    <th>Sel.</th>
+                                    <th><input type="checkbox" id="selectAllVale" class="select-all-check" title="Selecionar Todos"/></th>
                                     <th>Descrição</th>
                                     <th>Valor</th>
                                     <th>Tipo</th>
                                     <th>Vencimento</th>
-                                    <th>Pago</th>
+                                    <th><input type="checkbox" id="markPaidAllVale" class="mark-paid-all-check" title="Marcar Todos como Pagos"/></th>
                                     <th class="actions-cell">Ação</th>
                                 </tr>
                             </thead>
@@ -103,7 +104,7 @@
         </div>
 
         <footer>
-            <div class="muted">Último salvamento: <span id="lastSaved">—</span></div>
+            
         </footer>
 
         <button id="openAddFormBtn" class="floating-btn primary">
