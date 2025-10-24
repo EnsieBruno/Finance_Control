@@ -3,14 +3,14 @@
     margin-bottom: 140px; 
 }
 
-/* Ajustes Específicos para Mobile (550px e abaixo) */
 @media (max-width: 550px) {
     /* Flutuantes */
     .floating-card {
         right: 20px;
         bottom: 140px; 
-        width: 90vw;
+        width: 90vw; 
     }
+    
     .floating-btn {
         right: 20px;
         bottom: 80px; 
@@ -58,6 +58,20 @@
         grid-template-columns: 1fr;
     }
     
+    .form-grid .form-group input, 
+    .form-grid .form-group select {
+        padding: 12px 2px;
+    }
+
+       
+      /* Ajustando o padding do .floating-card: */
+    .floating-card {
+        right: 20px;
+        bottom: 140px; 
+        width: 90vw; 
+        padding: 24px 15px; 
+    }
+
     /* Ações da Tabela */
     .table-actions {
         /* Botões de ação da tabela ficam empilhados */
