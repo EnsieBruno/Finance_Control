@@ -14,7 +14,7 @@
         <header>
             <h1>Controle de Gastos</h1>
             <div class="header-actions">
-                <div class="muted">Dados salvos no seu navegador</div>
+                <div class="muted status-text-mobile-hide">Dados salvos no seu navegador</div>
                 <button id="themeToggle" class="btn-icon">
                     <span id="theme-icon">🌙</span>
                 </button>
@@ -59,13 +59,13 @@
                         <table id="salarioTable">
                             <thead>
                                 <tr>
-                                    <th><input type="checkbox" id="selectAllSalario" class="select-all-check" title="Selecionar Todos"/></th>
-                                    <th>Descrição</th>
-                                    <th>Valor</th>
-                                    <th>Tipo</th>
-                                    <th>Vencimento</th>
-                                    <th><input type="checkbox" id="markPaidAllSalario" class="mark-paid-all-check" title="Marcar Todos como Pagos"/></th>
-                                    <th class="actions-cell">Ação</th>
+                                    <th data-label="Sel."><input type="checkbox" id="selectAllSalario" class="select-all-check" title="Selecionar Todos"/></th>
+                                    <th data-label="Descrição">Descrição</th>
+                                    <th data-label="Valor">Valor</th>
+                                    <th data-label="Tipo">Tipo</th>
+                                    <th data-label="Vencimento">Vencimento</th>
+                                    <th data-label="Pago"><input type="checkbox" id="markPaidAllSalario" class="mark-paid-all-check" title="Marcar Todos como Pagos"/></th>
+                                    <th data-label="Ação" class="actions-cell">Ação</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -76,13 +76,13 @@
                         <table id="valeTable">
                             <thead>
                                 <tr>
-                                    <th><input type="checkbox" id="selectAllVale" class="select-all-check" title="Selecionar Todos"/></th>
-                                    <th>Descrição</th>
-                                    <th>Valor</th>
-                                    <th>Tipo</th>
-                                    <th>Vencimento</th>
-                                    <th><input type="checkbox" id="markPaidAllVale" class="mark-paid-all-check" title="Marcar Todos como Pagos"/></th>
-                                    <th class="actions-cell">Ação</th>
+                                    <th data-label="Sel."><input type="checkbox" id="selectAllVale" class="select-all-check" title="Selecionar Todos"/></th>
+                                    <th data-label="Descrição">Descrição</th>
+                                    <th data-label="Valor">Valor</th>
+                                    <th data-label="Tipo">Tipo</th>
+                                    <th data-label="Vencimento">Vencimento</th>
+                                    <th data-label="Pago"><input type="checkbox" id="markPaidAllVale" class="mark-paid-all-check" title="Marcar Todos como Pagos"/></th>
+                                    <th data-label="Ação" class="actions-cell">Ação</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -107,7 +107,7 @@
         </footer>
 
         <button id="openAddFormBtn" class="floating-btn primary">
-            + Adicionar Conta
+            <span id="floating-btn-icon">+</span>
         </button>
 
         <div id="addFormCard" class="floating-card hidden">

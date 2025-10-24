@@ -41,6 +41,8 @@ const refs = {
     markPaidAllSalario: $('#markPaidAllSalario'),
     selectAllVale: $('#selectAllVale'),
     markPaidAllVale: $('#markPaidAllVale'),
+    // NOVO: Referência ao ícone do botão flutuante
+    floatingBtnIcon: $('#floating-btn-icon'),
 };
 
 /* --- Funções Auxiliares --- */
@@ -178,13 +180,36 @@ function updateHeaderCheckboxes(source, type) {
     }
 }
 
+// NOVO: Função para lidar com o clique na linha (toggle expand/collapse)
+function handleRowClick(event) {
+    // Verifica se o clique foi em um elemento interativo (checkbox, input, select ou botão)
+    const interactiveElements = ['INPUT', 'BUTTON', 'SELECT', 'A'];
+    if (interactiveElements.includes(event.target.tagName) || 
+        event.target.closest('.actions-cell') ||
+        event.target.closest('.edit-mode')) {
+        return; // Ignora o clique se for em um controle
+    }
+    
+    const tr = event.currentTarget;
+    const isMobile = window.innerWidth <= 550;
+
+    // Só permite expandir/recolher se estiver no mobile e não estiver no modo de edição
+    if (isMobile && !isEditing) {
+        tr.classList.toggle('expanded');
+    }
+}
+
 
 function createTableRow(gasto) {
     const tr = document.createElement('tr');
     tr.dataset.id = gasto.id;
+    
+    // NOVO: Adiciona o listener de clique para expandir/recolher em mobile
+    tr.addEventListener('click', handleRowClick);
 
     // Coluna Sel. (Checkbox de Seleção)
     const tdSelect = document.createElement('td');
+    tdSelect.dataset.label = 'Sel.'; // Adiciona o data-label
     const chkSelect = document.createElement('input');
     chkSelect.type = 'checkbox';
     chkSelect.className = 'select-check';
@@ -205,23 +230,28 @@ function createTableRow(gasto) {
     tr.appendChild(tdSelect); 
 
     const tdDesc = document.createElement('td');
+    tdDesc.dataset.label = 'Descrição'; // Adiciona o data-label
     tdDesc.innerHTML = `<span class="data-field" data-key="desc">${gasto.desc}</span>`;
     tr.appendChild(tdDesc);
 
     const tdVal = document.createElement('td');
+    tdVal.dataset.label = 'Valor'; // Adiciona o data-label
     tdVal.innerHTML = `<span class="data-field" data-key="value">${fmt(gasto.value)}</span>`;
     tr.appendChild(tdVal);
 
     const tdType = document.createElement('td');
+    tdType.dataset.label = 'Tipo'; // Adiciona o data-label
     tdType.innerHTML = `<span class="data-field" data-key="type">${gasto.type === 'fixo' ? 'Fixo' : 'Variável'}</span>`;
     tr.appendChild(tdType);
 
     const tdDueDay = document.createElement('td');
+    tdDueDay.dataset.label = 'Vencimento'; // Adiciona o data-label
     tdDueDay.innerHTML = `<span class="data-field" data-key="dueDay">${gasto.dueDay || '-'}</span>`;
     tr.appendChild(tdDueDay);
 
     // Coluna Pago
     const tdPaid = document.createElement('td');
+    tdPaid.dataset.label = 'Pago'; // Adiciona o data-label
     const chk = document.createElement('input');
     chk.type = 'checkbox';
     chk.className = 'status-check';
@@ -237,6 +267,7 @@ function createTableRow(gasto) {
     tr.appendChild(tdPaid);
 
     const tdActions = document.createElement('td');
+    tdActions.dataset.label = 'Ação'; // Adiciona o data-label
     tdActions.className = 'actions-cell';
     const btnDelete = document.createElement('button');
     btnDelete.className = 'btn danger-ghost small';
@@ -403,17 +434,29 @@ function saveAllChanges() {
     render();
 }
 
+// NOVO: Função de Toggle para o Card de Adição de Conta
+function toggleAddFormCard() {
+    const isHidden = refs.addFormCard.classList.contains('hidden');
+    
+    if (isHidden) {
+        // Abrir
+        refs.addFormCard.classList.remove('hidden');
+        refs.openAddFormBtn.classList.add('active'); // Para rotacionar o '+'
+    } else {
+        // Fechar
+        refs.addFormCard.classList.add('hidden');
+        refs.openAddFormBtn.classList.remove('active'); // Para resetar o '+'
+    }
+}
 
 /* --- Lógica de Eventos --- */
 function setupEventListeners() {
     // 1. Adicionar Gasto (Modal)
-    refs.openAddFormBtn.addEventListener('click', () => {
-        refs.addFormCard.classList.remove('hidden');
-    });
-
-    refs.closeAddFormBtn.addEventListener('click', () => {
-        refs.addFormCard.classList.add('hidden');
-    });
+    // Usamos o toggleAddFormCard para abrir/fechar com o botão flutuante
+    refs.openAddFormBtn.addEventListener('click', toggleAddFormCard);
+    
+    // Usamos o toggleAddFormCard para fechar com o botão 'X' interno (só visível em desktop)
+    refs.closeAddFormBtn.addEventListener('click', toggleAddFormCard);
 
     refs.addForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -428,7 +471,10 @@ function setupEventListeners() {
         };
         state.gastos.push(novoGasto);
         refs.addForm.reset();
-        refs.addFormCard.classList.add('hidden');
+        
+        // Fecha o card após adicionar
+        toggleAddFormCard(); 
+        
         render();
     });
 

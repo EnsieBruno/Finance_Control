@@ -4,11 +4,8 @@
 }
 
 /* Ajuste para grids que precisam se tornar colunas em telas médias (Tablets na vertical, telas maiores que 550px) */
-@media (max-width: 900px) {
-    .gasto-tables-grid {
-        grid-template-columns: 1fr;
-    }
-}
+/* REGRA DE GRID REMOVIDA DAQUI */
+
 
 /* Ajustes Específicos para Mobile (550px e abaixo) */
 @media (max-width: 550px) {
