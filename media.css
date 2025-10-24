@@ -1,14 +1,20 @@
 .container {
-    /* AJUSTE: Aumenta a margem inferior em telas menores */
+    /* Ensures enough space for the floating action bar/buttons at the bottom on mobile */
     margin-bottom: 140px; 
 }
 
 @media (max-width: 550px) {
-    /* Flutuantes */
+    /* FIX: Prevents horizontal overflow, ensuring only vertical scroll */
+    body {
+        overflow-x: hidden;
+    }
+    
+    /* Floating Elements adjustments */
     .floating-card {
         right: 20px;
         bottom: 140px; 
         width: 90vw; 
+        padding: 24px 15px; /* Adjusting the floating-card padding: */
     }
     
     .floating-btn {
@@ -16,9 +22,9 @@
         bottom: 80px; 
     }
     
-    /* REFACTOR DO CARD DE RESUMO (SALDO) */
+    /* SUMMARY CARD REFACTOR (BALANCE) */
     .balance-header {
-        /* Empilha Título, Inputs e Total verticalmente */
+        /* Stacks Title, Inputs, and Total vertically */
         flex-direction: column;
         align-items: flex-start;
         gap: 20px;
@@ -32,29 +38,29 @@
     }
     
     .balance-inputs-container {
-        /* Inputs usam 100% da largura e ficam empilhados */
+        /* Inputs use 100% width and are stacked */
         flex-direction: column;
         width: 96%; 
         order: 2;
     }
 
     .balance-item {
-        /* Garante que cada input ocupe a largura total */
+        /* Ensures each input item takes full width */
         min-width: unset; 
         width: 95%;
     }
     
     .balance-total-display {
-        /* Saldo Final no final, alinhado à esquerda */
+        /* Final balance at the bottom, left-aligned */
         width: 100%;
         text-align: left;
         order: 3;
     }
-    /* FIM DA REFACTORIZAÇÃO DO RESUMO */
+    /* END OF SUMMARY CARD REFACTOR */
     
-    /* Formulário de Adição de Gasto */
+    /* Add Expense Form */
     .form-grid {
-        /* Garante que o formulário flutuante empilhe seus campos */
+        /* Ensures the floating form stacks its fields */
         grid-template-columns: 1fr;
     }
     
@@ -63,25 +69,16 @@
         padding: 12px 2px;
     }
 
-       
-      /* Ajustando o padding do .floating-card: */
-    .floating-card {
-        right: 20px;
-        bottom: 140px; 
-        width: 90vw; 
-        padding: 24px 15px; 
-    }
-
-    /* Ações da Tabela */
+    /* Table Actions */
     .table-actions {
-        /* Botões de ação da tabela ficam empilhados */
+        /* Table action buttons are stacked */
         flex-direction: column;
         gap: 8px;
     }
     
-    /* Barra de Ações de Seleção Flutuante */
+    /* Floating Selection Actions Bar */
     .selection-actions {
-        /* Empilha a informação e o botão na barra flutuante */
+        /* Stacks information and button on the floating bar */
         flex-direction: column;
         align-items: stretch;
     }
@@ -89,6 +86,155 @@
         text-align: center;
     }
     #removeSelectedBtn {
-        width: 100%; /* Botão de exclusão ocupa a largura total */
+        width: 100%; /* Delete button takes full width */
+    }
+
+    /* --- RESPONSIVIDADE DE TABELA (Card View) - MOVIDO DE style.css --- */
+    
+    .status-text-mobile-hide {
+        display: none;
+    }
+    
+    /* Hide the close button on the floating card for mobile (using floating button for control) */
+    #addFormCard .close-btn {
+        display: none;
+    }
+
+    /* Convert table rows to card-like blocks */
+    #salarioTable, #valeTable {
+        border: none; 
+    }
+
+    /* Hide table header */
+    #salarioTable thead, #valeTable thead {
+        display: none;
+    }
+
+    /* Each row (<tr>) becomes a block/card */
+    #salarioTable tr, #valeTable tr {
+        display: block;
+        margin-bottom: 16px;
+        padding: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--card-bg);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        cursor: pointer; 
+    }
+    
+    /* Expanded row style */
+    #salarioTable tr.expanded, #valeTable tr.expanded {
+        padding-bottom: 5px; 
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        border-color: var(--purple-main); 
+    }
+
+    /* Each cell (<td>) becomes a block */
+    #salarioTable td, #valeTable td {
+        display: block;
+        text-align: right;
+        padding: 8px 0 !important; 
+        border: none;
+        position: relative;
+    }
+    
+    /* ---------------------------------------------------- */
+    /* COMPACT VIEW VISIBILITY RULES (Only Selection, Description, Value visible) */
+    /* ---------------------------------------------------- */
+    
+    /* Hide non-essential cells in compact mode (Type, Due Date, Paid Status, Actions) */
+    #salarioTable td:nth-child(4), #valeTable td:nth-child(4),
+    #salarioTable td:nth-child(5), #valeTable td:nth-child(5),
+    #salarioTable td:nth-child(6), #valeTable td:nth-child(6),
+    #salarioTable td:nth-child(7), #valeTable td:nth-child(7) {
+        display: none;
+        opacity: 0;
+        height: 0;
+        transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out, display 0.3s;
+    }
+
+    /* Description (2nd cell) separation */
+    #salarioTable td:nth-child(2), #valeTable td:nth-child(2) {
+        border-bottom: 1px dashed var(--border-color);
+        margin-bottom: 8px;
+    }
+
+    /* Value (3rd cell) highlight in compact mode */
+    #salarioTable tr:not(.expanded) td:nth-child(3), #valeTable tr:not(.expanded) td:nth-child(3) {
+        display: block; 
+        opacity: 1;
+        height: auto;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--purple-main);
+        border-bottom: 1px dashed var(--border-color);
+    }
+
+    /* Selection (1st cell) always visible */
+    #salarioTable tr:not(.expanded) td:nth-child(1), #valeTable tr:not(.expanded) td:nth-child(1),
+    #salarioTable tr.expanded td:nth-child(1), #valeTable tr.expanded td:nth-child(1) {
+        display: flex;
+        opacity: 1;
+        height: auto;
+        padding-bottom: 5px !important;
+    }
+
+    /* REVEAL all content when expanded */
+    #salarioTable tr.expanded td, #valeTable tr.expanded td {
+        display: block;
+        opacity: 1;
+        height: auto;
+        font-weight: 400; 
+        font-size: 1rem; 
+        color: var(--text-color);
+        border-bottom: none;
+    }
+
+    /* Paid Status (6th cell) separator in expanded mode */
+    #salarioTable tr.expanded td:nth-child(6), #valeTable tr.expanded td:nth-child(6) {
+        border-bottom: 1px dashed var(--border-color); 
+    }
+
+    /* Actions (7th cell) alignment */
+    #salarioTable tr.expanded td:nth-child(7), #valeTable tr.expanded td:nth-child(7) {
+        text-align: right; 
+    }
+
+    /* ---------------------------------------------------- */
+
+    /* Add column label before cell content using data-label attribute */
+    #salarioTable td::before, #valeTable td::before {
+        content: attr(data-label) ":";
+        float: left;
+        font-weight: 600;
+        color: var(--gray-medium);
+        padding-right: 10px;
+    }
+    
+    /* Styling for Action and Status/Selection columns */
+
+    /* Action (which is at the bottom of the card) */
+    .actions-cell {
+        text-align: right;
+    }
+    .actions-cell::before {
+        display: none; 
+    }
+    
+    /* Checkbox columns (Selection and Paid) display */
+    #salarioTable td:nth-child(1), #valeTable td:nth-child(1),
+    #salarioTable td:nth-child(6), #valeTable td:nth-child(6) {
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px dashed var(--border-color);
+    }
+    
+    /* Ensure edit mode inputs fill space correctly */
+    .edit-mode, .edit-mode-select {
+        width: 60%;
+        max-width: 200px;
+        font-size: 0.875rem;
     }
 }
