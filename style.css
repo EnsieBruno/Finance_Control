@@ -1,8 +1,8 @@
 @import url("media.css");
 
 
+/*
 :root {
-    /* Core variables */
     --purple-light: #f5f0ff;
     --purple-main: #820ad1;
     --gray-dark: #333333;
@@ -22,9 +22,50 @@
 }
 
 :root.dark-mode {
-    /* Dark mode variables */
     --purple-light: #2c0847;
     --purple-main: #9c51e3;
+    --gray-dark: #e0e0e0;
+    --gray-medium: #b0b0b0;
+    --gray-light: #444;
+    --gray-very-light: #121212;
+    --green-paid: #27c24c;
+    --red-alert: #ff6b6b;
+    --card-bg: #1e1e1e;
+    --border-color: #333;
+    --body-bg: var(--gray-very-light);
+    --text-color: var(--gray-dark);
+}*/
+
+/* Cores do Picpay */
+
+:root {
+    /* Cores principais atualizadas para o Verde PicPay */
+    --purple-light: #E6F8F0; /* Verde bem claro, usado para BG/Highlight */
+    --purple-main: #11C76F; /* Verde Principal do PicPay */
+    
+    /* Cores de cinza e alertas mantidas */
+    --gray-dark: #333333;
+    --gray-medium: #666666;
+    --gray-light: #ebebeb;
+    --gray-very-light: #f7f7f7;
+    --green-paid: #00b900;
+    --red-alert: #e53e3e;
+    --card-bg: #ffffff;
+    --border-color: #e2e2e2;
+    --body-bg: var(--gray-very-light);
+    --text-color: var(--gray-dark);
+
+    font-family: 'Inter', sans-serif;
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+:root.dark-mode {
+    /* Cores do Modo Escuro ajustadas para o Verde PicPay */
+    --purple-light: #0B4E2B; /* Um verde escuro, mantendo a tonalidade principal */
+    --purple-main: #11C76F; /* Mantemos o verde claro principal do PicPay para destaque */
+    
+    /* Cores de cinza e fundo do Modo Escuro mantidas */
     --gray-dark: #e0e0e0;
     --gray-medium: #b0b0b0;
     --gray-light: #444;
