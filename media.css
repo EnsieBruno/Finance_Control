@@ -38,7 +38,7 @@
     .balance-inputs-container {
         /* Inputs usam 100% da largura e ficam empilhados */
         flex-direction: column;
-        width: 100%; 
+        width: 96%; 
         order: 2;
     }
 
