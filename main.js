@@ -240,7 +240,7 @@ function createTableRow(gasto) {
     tdActions.className = 'actions-cell';
     const btnDelete = document.createElement('button');
     btnDelete.className = 'btn danger-ghost small';
-    btnDelete.textContent = 'Remover';
+    btnDelete.textContent = 'X';
     btnDelete.style.display = isEditing ? 'none' : 'inline-block';
     btnDelete.addEventListener('click', () => {
         if (confirm(`Remover "${gasto.desc}"?`)) {
