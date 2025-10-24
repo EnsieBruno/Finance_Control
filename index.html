@@ -25,21 +25,20 @@
             <div class="card summary-card">
                 <div class="balance-header">
                     <h2>Resumo Financeiro</h2>
+                    <div class="balance-inputs-container">
+                        <div class="balance-item">
+                            <label for="salarioInput">Salário</label>
+                            <input type="text" id="salarioInput" class="balance-input money-input" autocomplete="off" placeholder="R$ 0,00" />
+                        </div>
+                        <div class="balance-item">
+                            <label for="valeInput">Vale</label>
+                            <input type="text" id="valeInput" class="balance-input money-input" autocomplete="off" placeholder="R$ 0,00" />
+                        </div>
+                </div>
                     <div class="balance-total-display">
                         <div class="muted">Último salvamento: <span id="lastSaved">—</span></div>
                         <span class="muted">Saldo Final</span>
                         <div class="balance-value" id="saldoFinal">R$ 0,00</div>
-                    </div>
-                </div>
-
-                <div class="balance-inputs-container">
-                    <div class="balance-item">
-                        <label for="salarioInput">Salário</label>
-                        <input type="text" id="salarioInput" class="balance-input money-input" autocomplete="off" placeholder="R$ 0,00" />
-                    </div>
-                    <div class="balance-item">
-                        <label for="valeInput">Vale</label>
-                        <input type="text" id="valeInput" class="balance-input money-input" autocomplete="off" placeholder="R$ 0,00" />
                     </div>
                 </div>
             </div>

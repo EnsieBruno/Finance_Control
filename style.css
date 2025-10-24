@@ -117,19 +117,30 @@ header {
 
 /* Novo estilo para o Card de Resumo (Topo) */
 .summary-card {
-    display: flex;
-    flex-direction: column;
+    /* Garante que o padding e estilo do card seja aplicado, mas o flex principal está no .balance-header */
+    display: block;
 }
 
 .balance-header {
+    /* **CORREÇÃO:** Define o contêiner principal do resumo para usar Flexbox,
+       distribuindo os elementos em linha e usando o espaço total. */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    width: 100%;
+    gap: 30px; 
+    margin-bottom: 0; 
+}
+
+.balance-header h2 {
+    margin: 0;
+    flex-shrink: 0; /* Garante que o título ocupe o mínimo de espaço */
+    white-space: nowrap;
 }
 
 .balance-total-display {
     text-align: right;
+    flex-shrink: 0; /* Garante que o saldo final ocupe o mínimo de espaço */
 }
 
 .balance-value {
@@ -143,6 +154,7 @@ header {
     gap: 20px;
     justify-content: flex-start;
     flex-wrap: wrap;
+    flex-grow: 1; /* Permite que este bloco ocupe o espaço restante */
 }
 
 .balance-item {
@@ -450,9 +462,30 @@ footer {
         right: 20px;
         bottom: 80px; /* Ajustado para a nova barra */
     }
+    
+    /* CORREÇÃO/AJUSTE DE RESPONSIVIDADE PARA O HEADER DO RESUMO */
+    .balance-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .balance-header h2 {
+        width: 100%;
+        text-align: left;
+    }
+    
     .balance-inputs-container {
         flex-direction: column;
+        width: 100%; 
     }
+    
+    .balance-total-display {
+        width: 100%;
+        text-align: left;
+    }
+    /* FIM DA CORREÇÃO DE RESPONSIVIDADE */
+    
     .form-grid {
         grid-template-columns: 1fr;
     }
