@@ -1,3 +1,6 @@
+@import url("media.css");
+
+
 :root {
     /* ... (variáveis existentes) ... */
     --purple-light: #f5f0ff;
@@ -445,67 +448,3 @@ footer {
     font-size: 12px;
 }
 
-/* Responsive Design */
-@media (max-width: 900px) {
-    .gasto-tables-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 550px) {
-    .floating-card {
-        right: 20px;
-        bottom: 140px; /* Ajustado para a nova barra */
-        width: 90vw;
-    }
-    .floating-btn {
-        right: 20px;
-        bottom: 80px; /* Ajustado para a nova barra */
-    }
-    
-    /* CORREÇÃO/AJUSTE DE RESPONSIVIDADE PARA O HEADER DO RESUMO */
-    .balance-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 20px;
-    }
-
-    .balance-header h2 {
-        width: 100%;
-        text-align: left;
-    }
-    
-    .balance-inputs-container {
-        flex-direction: column;
-        width: 100%; 
-    }
-    
-    .balance-total-display {
-        width: 100%;
-        text-align: left;
-    }
-    /* FIM DA CORREÇÃO DE RESPONSIVIDADE */
-    
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-    .table-actions {
-        flex-direction: column;
-        gap: 8px;
-    }
-    /* Ajuste para telas menores */
-    .selection-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .selection-info {
-        text-align: center;
-    }
-    #removeSelectedBtn {
-        width: 100%;
-    }
-    /* AJUSTE: Aumenta a margem inferior em telas menores */
-    .container {
-        margin-bottom: 140px; 
-    }
-}

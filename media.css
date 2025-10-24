@@ -1,0 +1,87 @@
+.container {
+    /* AJUSTE: Aumenta a margem inferior em telas menores */
+    margin-bottom: 140px; 
+}
+
+/* Ajuste para grids que precisam se tornar colunas em telas médias (Tablets na vertical, telas maiores que 550px) */
+@media (max-width: 900px) {
+    .gasto-tables-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Ajustes Específicos para Mobile (550px e abaixo) */
+@media (max-width: 550px) {
+    /* Flutuantes */
+    .floating-card {
+        right: 20px;
+        bottom: 140px; /* Ajustado para a nova barra de seleção */
+        width: 90vw;
+    }
+    .floating-btn {
+        right: 20px;
+        bottom: 80px; /* Ajustado para a nova barra de seleção */
+    }
+    
+    /* REFACTOR DO CARD DE RESUMO (SALDO) */
+    .balance-header {
+        /* Empilha Título, Inputs e Total verticalmente */
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+        width: 100%;
+    }
+
+    .balance-header h2 {
+        width: 100%;
+        text-align: left;
+        order: 1;
+    }
+    
+    .balance-inputs-container {
+        /* Inputs usam 100% da largura e ficam empilhados */
+        flex-direction: column;
+        width: 100%; 
+        order: 2;
+    }
+
+    .balance-item {
+        /* Garante que cada input ocupe a largura total */
+        min-width: unset; 
+        width: 100%;
+    }
+    
+    .balance-total-display {
+        /* Saldo Final no final, alinhado à esquerda */
+        width: 100%;
+        text-align: left;
+        order: 3;
+    }
+    /* FIM DA REFACTORIZAÇÃO DO RESUMO */
+    
+    /* Formulário de Adição de Gasto */
+    .form-grid {
+        /* Garante que o formulário flutuante empilhe seus campos */
+        grid-template-columns: 1fr;
+    }
+    
+    /* Ações da Tabela */
+    .table-actions {
+        /* Botões de ação da tabela ficam empilhados */
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    /* Barra de Ações de Seleção Flutuante */
+    .selection-actions {
+        /* Empilha a informação e o botão na barra flutuante */
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .selection-info {
+        text-align: center;
+    }
+    #removeSelectedBtn {
+        width: 100%; /* Botão de exclusão ocupa a largura total */
+    }
+}
