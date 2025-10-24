@@ -2,7 +2,7 @@
 
 
 :root {
-    /* ... (variáveis existentes) ... */
+    /* Core variables */
     --purple-light: #f5f0ff;
     --purple-main: #820ad1;
     --gray-dark: #333333;
@@ -22,7 +22,7 @@
 }
 
 :root.dark-mode {
-    /* ... (variáveis existentes) ... */
+    /* Dark mode variables */
     --purple-light: #2c0847;
     --purple-main: #9c51e3;
     --gray-dark: #e0e0e0;
@@ -57,13 +57,13 @@ body {
     flex-direction: column;
     gap: 20px;
     position: relative; 
-    /* AJUSTE: Adiciona margem inferior para o footer e a barra de ações flutuante */
+    /* Ensures space for floating elements */
     margin-bottom: 80px; 
 }
 
 /* Typography & General Styles */
 h1 {
-    font-size: 2em;
+    font-size: 2rem;
     font-weight: 800;
     color: var(--purple-main);
 }
@@ -82,8 +82,8 @@ h3 {
 }
 
 .muted {
+    font-size: 0.875rem;
     color: var(--gray-medium);
-    font-size: 14px;
 }
 
 /* Layout Components */
@@ -118,15 +118,13 @@ header {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
-/* Novo estilo para o Card de Resumo (Topo) */
+/* Summary Card Styles */
 .summary-card {
-    /* Garante que o padding e estilo do card seja aplicado, mas o flex principal está no .balance-header */
     display: block;
 }
 
 .balance-header {
-    /* **CORREÇÃO:** Define o contêiner principal do resumo para usar Flexbox,
-       distribuindo os elementos em linha e usando o espaço total. */
+    /* Flex container for title, inputs, and total display */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -137,17 +135,17 @@ header {
 
 .balance-header h2 {
     margin: 0;
-    flex-shrink: 0; /* Garante que o título ocupe o mínimo de espaço */
+    flex-shrink: 0; 
     white-space: nowrap;
 }
 
 .balance-total-display {
     text-align: right;
-    flex-shrink: 0; /* Garante que o saldo final ocupe o mínimo de espaço */
+    flex-shrink: 0; 
 }
 
 .balance-value {
-    font-size: 28px;
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--purple-main);
 }
@@ -157,7 +155,7 @@ header {
     gap: 20px;
     justify-content: flex-start;
     flex-wrap: wrap;
-    flex-grow: 1; /* Permite que este bloco ocupe o espaço restante */
+    flex-grow: 1;
 }
 
 .balance-item {
@@ -180,11 +178,11 @@ header {
     border: 1px solid var(--border-color);
     background: var(--gray-very-light);
     color: var(--text-color);
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: 400;
 }
 
-/* Formulário de Adição de Gasto (dentro do floating-card) */
+/* Floating Form Card Styles */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -202,7 +200,7 @@ header {
 }
 
 label {
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--gray-medium);
     margin-bottom: 0;
 }
@@ -211,7 +209,7 @@ input, select {
     padding: 12px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    font-size: 16px;
+    font-size: 1rem;
     background: var(--gray-very-light);
     color: var(--text-color);
 }
@@ -233,7 +231,7 @@ input:focus, select:focus {
 }
 
 
-/* Buttons (Mantidos) */
+/* Button Styles */
 .btn {
     padding: 12px 20px;
     border-radius: 8px;
@@ -280,7 +278,7 @@ input:focus, select:focus {
     right: 40px;
     z-index: 1000;
     cursor: pointer;
-    /* Faz o botão ser um círculo perfeito */
+    /* Circular button */
     width: 50px; 
     height: 50px;
     padding: 0;
@@ -296,7 +294,6 @@ input:focus, select:focus {
     transition: transform 0.3s;
 }
 
-/* NOVO: Estilo para o botão quando o card estiver aberto (transforma + em X) */
 .floating-btn.active span {
     transform: rotate(45deg); 
 }
@@ -359,7 +356,7 @@ input:focus, select:focus {
     margin-top: 24px;
 }
 
-/* NOVO: Garante que as tabelas sejam empilhadas (coluna) em telas menores ou iguais a 900px */
+/* Stack tables vertically on smaller screens */
 @media (max-width: 900px) {
     .gasto-tables-grid {
         grid-template-columns: 1fr;
@@ -378,12 +375,10 @@ input:focus, select:focus {
     gap: 12px;
 }
 
-/* NOVO: Wrapper para Scroll Horizontal no Mobile (Removido o estilo, mas mantive o table genérico) */
 table {
     width: 100%;
-    /* Removido min-width para permitir o modo card */
     border-collapse: collapse;
-    font-size: 16px;
+    font-size: 1rem;
     background: transparent;
 }
 
@@ -406,7 +401,7 @@ tbody td {
 }
 
 .actions-cell .btn {
-    font-size: 13px;
+    font-size: 0.8125rem;
     padding: 8px 12px;
 }
 
@@ -416,21 +411,21 @@ tbody td {
     cursor: pointer;
 }
 
-/* Edição Inline */
+/* Inline Editing */
 .edit-mode {
     width: 100%;
     padding: 6px;
-    font-size: 14px;
+    font-size: 0.875rem;
     box-sizing: border-box;
 }
 
 .edit-mode-select {
     width: 100%;
-    font-size: 14px;
+    font-size: 0.875rem;
     padding: 6px;
 }
 
-/* Footer (Mantido) */
+/* Footer */
 footer {
     display: flex;
     justify-content: flex-end;
@@ -439,7 +434,7 @@ footer {
     text-align: right;
 }
 
-/* Barra de Ações de Seleção Flutuante */
+/* Floating Selection Actions Bar */
 .selection-actions {
     position: fixed;
     bottom: 0;
@@ -463,40 +458,39 @@ footer {
 
 .selection-info h3 {
     margin: 0 0 5px 0;
-    font-size: 1.2em;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--purple-main);
 }
 
 .selection-info .muted {
-    font-size: 12px;
+    font-size: 0.75rem;
 }
 
-/* --- Tabela Responsiva (Card View) --- */
+/* --- Responsive Table (Card View) --- */
 
 @media (max-width: 550px) {
     
-    /* NOVO: Esconde o texto de status no header */
     .status-text-mobile-hide {
         display: none;
     }
     
-    /* NOVO: Oculta o botão de fechar dentro do card (o botão flutuante fará isso) */
+    /* Hide the close button on the floating card for mobile (using floating button for control) */
     #addFormCard .close-btn {
         display: none;
     }
 
-    /* Faz a linha da tabela (<tr>) se comportar como um bloco/card */
+    /* Convert table rows to card-like blocks */
     #salarioTable, #valeTable {
-        border: none; /* Remove a borda principal da tabela */
+        border: none; 
     }
 
-    /* Oculta o cabeçalho tradicional da tabela */
+    /* Hide table header */
     #salarioTable thead, #valeTable thead {
         display: none;
     }
 
-    /* Cada linha (<tr>) vira um bloco/card */
+    /* Each row (<tr>) becomes a block/card */
     #salarioTable tr, #valeTable tr {
         display: block;
         margin-bottom: 16px;
@@ -505,31 +499,30 @@ footer {
         border-radius: 8px;
         background: var(--card-bg);
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        cursor: pointer; /* Adiciona cursor para indicar que é clicável */
+        cursor: pointer; 
     }
     
-    /* NOVO: Estilo para linhas expandidas */
+    /* Expanded row style */
     #salarioTable tr.expanded, #valeTable tr.expanded {
-        padding-bottom: 5px; /* Ajuste para o conteúdo expandido */
+        padding-bottom: 5px; 
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        border-color: var(--purple-main); /* Realça a linha expandida */
+        border-color: var(--purple-main); 
     }
 
-    /* Cada célula (<td>) vira um bloco */
+    /* Each cell (<td>) becomes a block */
     #salarioTable td, #valeTable td {
         display: block;
         text-align: right;
-        padding: 8px 0 !important; /* Ajusta o padding */
+        padding: 8px 0 !important; 
         border: none;
         position: relative;
     }
     
     /* ---------------------------------------------------- */
-    /* NOVO: REGRAS DE VISIBILIDADE COMPACTA */
+    /* COMPACT VIEW VISIBILITY RULES (Only Selection, Description, Value visible) */
     /* ---------------------------------------------------- */
     
-    /* 1. Oculta TODAS as células, exceto as duas primeiras (Sel. e Descrição) e a 3ª (Valor) */
-    /* 4º Tipo, 5º Vencimento, 6º Pago, 7º Ação */
+    /* Hide non-essential cells in compact mode (Type, Due Date, Paid Status, Actions) */
     #salarioTable td:nth-child(4), #valeTable td:nth-child(4),
     #salarioTable td:nth-child(5), #valeTable td:nth-child(5),
     #salarioTable td:nth-child(6), #valeTable td:nth-child(6),
@@ -540,26 +533,24 @@ footer {
         transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out, display 0.3s;
     }
 
-    /* 2. Mantém as células principais (Seleção, Descrição, Valor) visíveis no modo compacto */
-    
-    /* Descrição (2ª célula) */
+    /* Description (2nd cell) separation */
     #salarioTable td:nth-child(2), #valeTable td:nth-child(2) {
         border-bottom: 1px dashed var(--border-color);
         margin-bottom: 8px;
     }
 
-    /* Valor (3ª célula) - Estilizado para destaque no modo compacto */
+    /* Value (3rd cell) highlight in compact mode */
     #salarioTable tr:not(.expanded) td:nth-child(3), #valeTable tr:not(.expanded) td:nth-child(3) {
         display: block; 
         opacity: 1;
         height: auto;
         font-weight: 700;
-        font-size: 1.1em;
+        font-size: 1.1rem;
         color: var(--purple-main);
         border-bottom: 1px dashed var(--border-color);
     }
 
-    /* Seleção (1ª célula) */
+    /* Selection (1st cell) always visible */
     #salarioTable tr:not(.expanded) td:nth-child(1), #valeTable tr:not(.expanded) td:nth-child(1),
     #salarioTable tr.expanded td:nth-child(1), #valeTable tr.expanded td:nth-child(1) {
         display: flex;
@@ -568,31 +559,30 @@ footer {
         padding-bottom: 5px !important;
     }
 
-    /* 3. REVELA o conteúdo quando a linha está expandida */
+    /* REVEAL all content when expanded */
     #salarioTable tr.expanded td, #valeTable tr.expanded td {
         display: block;
         opacity: 1;
         height: auto;
-        /* Reset de estilos de destaque para os campos principais */
         font-weight: 400; 
-        font-size: 1em; 
+        font-size: 1rem; 
         color: var(--text-color);
         border-bottom: none;
     }
 
-    /* Ação e Pago em modo expandido */
+    /* Paid Status (6th cell) separator in expanded mode */
     #salarioTable tr.expanded td:nth-child(6), #valeTable tr.expanded td:nth-child(6) {
-        border-bottom: 1px dashed var(--border-color); /* Restaura a linha para pago */
+        border-bottom: 1px dashed var(--border-color); 
     }
 
-    /* Ação (7ª célula) */
+    /* Actions (7th cell) alignment */
     #salarioTable tr.expanded td:nth-child(7), #valeTable tr.expanded td:nth-child(7) {
-        text-align: right; /* Alinhamento corrigido para o botão */
+        text-align: right; 
     }
 
     /* ---------------------------------------------------- */
 
-    /* Adiciona o rótulo da coluna (data-label) antes do conteúdo da célula */
+    /* Add column label before cell content using data-label attribute */
     #salarioTable td::before, #valeTable td::before {
         content: attr(data-label) ":";
         float: left;
@@ -601,18 +591,17 @@ footer {
         padding-right: 10px;
     }
     
-    /* Estiliza as colunas de Ação e Status/Seleção */
+    /* Styling for Action and Status/Selection columns */
 
-    /* Ação e Status (que ficam no final do card) */
+    /* Action (which is at the bottom of the card) */
     .actions-cell {
         text-align: right;
-        /* Garante que o rótulo "Ação" não apareça no final */
     }
     .actions-cell::before {
         display: none; 
     }
     
-    /* Colunas de checkbox (Seleção e Pago) para melhor visualização */
+    /* Checkbox columns (Selection and Paid) display */
     #salarioTable td:nth-child(1), #valeTable td:nth-child(1),
     #salarioTable td:nth-child(6), #valeTable td:nth-child(6) {
         text-align: left;
@@ -622,9 +611,10 @@ footer {
         border-bottom: 1px dashed var(--border-color);
     }
     
-    /* Garante que os inputs em modo edição preencham o espaço */
+    /* Ensure edit mode inputs fill space correctly */
     .edit-mode, .edit-mode-select {
         width: 60%;
         max-width: 200px;
+        font-size: 0.875rem;
     }
 }
