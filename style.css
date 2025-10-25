@@ -191,7 +191,7 @@ tbody tr:last-child td { border-bottom: 1px solid var(--border-color); }
     #user-info { flex-grow: 1; }
     #user-email { max-width: 120px; }
     .floating-card { right: 5vw; bottom: 140px; width: 90vw; padding: 24px 15px; }
-    .floating-btn { right: 20px; bottom: 70px; }
+    .floating-btn { right: 20px; bottom: 50px; }
     .balance-header { flex-direction: column; align-items: flex-start; gap: 20px; width: 100%; }
     .balance-header h2 { width: 100%; text-align: left; order: 1; }
     .balance-inputs-container { flex-direction: column; width: 100%; order: 2; }
@@ -199,6 +199,30 @@ tbody tr:last-child td { border-bottom: 1px solid var(--border-color); }
     .balance-total-display { width: 100%; text-align: left; order: 3; }
     .form-grid { grid-template-columns: 1fr; }
     .form-grid .form-group input, .form-grid .form-group select { padding: 12px 8px; }
+    
+    /* --- Estilização Específica para o grid do "Adicionar Conta" --- */
+    /* Mantém o grid de 2 colunas no mobile para o form de adicionar,
+      para que os campos fiquem lado a lado e o card não fique tão alto.
+      Isso sobrepõe a regra geral ".form-grid { grid-template-columns: 1fr; }"
+    */
+    .add-form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px; /* Reduz o espaçamento no mobile */
+    }
+
+    /* Ajuste nos labels e inputs dentro deste grid para economizar espaço */
+    .add-form-grid .form-group label {
+        font-size: 0.8rem;
+        margin-top: 0; /* Remove o margin-top padrão do label */
+    }
+    
+    .add-form-grid .form-group input, 
+    .add-form-grid .form-group select {
+        padding: 10px 8px; /* Padding um pouco menor */
+        font-size: 0.95rem; /* Fonte ligeiramente menor */
+    }
+    /* O .form-group.full-width (Descrição) já está configurado para ocupar as 2 colunas */
+    
     /* Ajuste padding senha mobile */
     input[type="password"], input[type="text"].password-input-field { padding-right: 45px; } 
     .password-toggle-icon { padding-top: 10px; } 
