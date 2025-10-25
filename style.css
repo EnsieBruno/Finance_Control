@@ -68,7 +68,7 @@ body { background: var(--body-bg); color: var(--text-color); padding: 20px; line
 #auth-message.success { color: var(--green-paid); }
 
 /* --- Container Principal --- */
-#app-container { display: none; width: 100%; margin: 0 auto; flex-direction: column; gap: 20px; position: relative; margin-bottom: 80px; }
+#app-container { display: none; width: 100%; margin: 0 auto; flex-direction: column; gap: 2px; position: relative; margin-bottom: 80px; }
 h1 { font-size: 2rem; font-weight: 800; color: var(--purple-main); }
 h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; }
 h3 { font-size: 1rem; font-weight: 500; color: var(--gray-medium); margin: 0; }
