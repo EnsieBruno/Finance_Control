@@ -2,7 +2,7 @@
 
 Um sistema web completo para controle de gastos pessoais, focado em alta usabilidade. Esta versão utiliza **Supabase** como backend, permitindo autenticação de usuários e persistência de dados na nuvem.
 
-## ✨ Funcionalidades Principai
+## ✨ Funcionalidades Principais
 
 Este projeto evoluiu de uma simples SPA para uma aplicação full-stack com os seguintes recursos:
 
