@@ -10,7 +10,7 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 /* --- Configurações e Variáveis Globais --- */
 const STORAGE_THEME_KEY = 'theme_mode';
 let currentUser = null; 
-let isLoginMode = true; // Controla se o formulário está em modo Login ou Cadastro
+let isLoginMode = true; 
 
 let state = {
     gastos: [],
@@ -25,1095 +25,233 @@ let selectedGastosIds = [];
 /* --- Referências do DOM --- */
 const $ = sel => document.querySelector(sel);
 const $$ = sel => document.querySelectorAll(sel);
-const refs = {
-    // Telas
-    authScreen: $('#auth-screen'),
-    appContainer: $('#app-container'),
-    
-    // Auth
-    authForm: $('#auth-form'),
-    authEmailInput: $('#auth-email'),
-    authPasswordInput: $('#auth-password'),
-    authSubmitBtn: $('#auth-submit-btn'),
-    authToggleLogin: $('#auth-toggle-login'),
-    authToggleRegister: $('#auth-toggle-register'),
-    authTitle: $('#auth-title'),
-    authSubtitle: $('#auth-subtitle'),
-    authMessage: $('#auth-message'),
-    forgotPasswordLink: $('#forgot-password-link'), 
-    
-    // App
-    logoutBtn: $('#logout-btn'),
-    userInfo: $('#user-info'),
-    userAvatar: $('#user-avatar'),
-    userEmail: $('#user-email'),
-    salarioInput: $('#salarioInput'),
-    valeInput: $('#valeInput'),
-    saldoFinalEl: $('#saldoFinal'),
-    addForm: $('#addForm'),
-    salarioTableBody: $('#salarioTable tbody'),
-    valeTableBody: $('#valeTable tbody'),
-    btnClear: $('#btnClear'),
-    themeToggle: $('#themeToggle'),
-    editAllBtn: $('#editAllBtn'),
-    saveAllBtn: $('#saveAllBtn'),
-    cancelEditBtn: $('#cancelEditBtn'),
-    
-    // Floating "Add Gasto"
-    openAddFormBtn: $('#openAddFormBtn'), 
-    closeAddFormBtn: $('#closeAddFormBtn'), 
-    addFormCard: $('#addFormCard'),
-    
-    // Floating "Manage Account"
-    manageAccountBtn: $('#manage-account-btn'),
-    manageAccountCard: $('#manageAccountCard'),
-    closeManageAccountBtn: $('#closeManageAccountBtn'),
-    updateEmailForm: $('#update-email-form'),
-    updatePasswordForm: $('#update-password-form'),
-    updateEmailInput: $('#update-email'),
-    updatePasswordInput: $('#update-password'),
-    updateEmailMessage: $('#update-email-message'),
-    updatePasswordMessage: $('#update-password-message'),
-
-    // Selection Bar
-    selectionActions: $('#selectionActions'),
-    selectedTotalEl: $('#selectedTotal'),
-    selectedCountEl: $('#selectedCount'),
-    removeSelectedBtn: $('#removeSelectedBtn'),
-    selectAllSalario: $('#selectAllSalario'),
-    markPaidAllSalario: $('#markPaidAllSalario'),
-    selectAllVale: $('#selectAllVale'),
-    markPaidAllVale: $('#markPaidAllVale'),
-
-    // NOVOS: CSV Import/Export
-    exportCsvBtn: $('#export-csv-btn'),
-    importCsvBtn: $('#import-csv-btn'),
-    csvFileInput: $('#csv-file-input'),
-};
+let refs = {}; // Initialize empty, will be populated after DOM load
 
 /* --- Funções Auxiliares --- */
-const fmt = v => {
-    if (isNaN(v)) v = 0;
-    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
-
-const unformatCurrency = (value) => {
-    const cleaned = String(value).replace('R$', '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
-    return parseFloat(cleaned) || 0;
-};
-
-const formatCurrencyInput = (e) => {
-    let value = e.target.value;
-    value = value.replace('R$', '').replace(/\s/g, '').replace(/\./g, '').replace(',', '');
-    
-    if (value && !isNaN(value)) {
-        value = (parseInt(value, 10) / 100).toFixed(2);
-        value = value.replace('.', ',');
-        
-        // Regex para adicionar ponto de milhar
-        value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
-        if (value.startsWith('.')) {
-            value = value.substring(1);
+const fmt = v => { if (isNaN(v)) v = 0; return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
+const unformatCurrency = (value) => { const cleaned = String(value).replace(/[R$\s.]/g, '').replace(',', '.'); return parseFloat(cleaned) || 0; };
+const formatCurrencyInput = (e) => { 
+    let v = e.target.value.replace(/\D/g, ''); 
+    if (v) { 
+        v = (parseInt(v, 10) / 100).toFixed(2).replace('.', ','); 
+        v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.'); 
+        // Ensure leading zero for values < 1,00 but handle > 0,00
+        if (v.length > 3 && v.indexOf('.') === v.length - 3 && v.startsWith(',')) {
+            v = '0' + v; // Prepend 0 if it starts with comma like ",50"
+        } else if (v.startsWith('.')) { 
+            v = v.substring(1); // Remove leading dot if any leftover (less likely now)
         }
-        e.target.value = `R$ ${value}`;
+        e.target.value = `R$ ${v}`; 
     } else {
         e.target.value = ''; 
     }
 };
+let saveProfileTimeout; const debouncedSaveProfile = () => { clearTimeout(saveProfileTimeout); saveProfileTimeout = setTimeout(saveProfileData, 1000); };
 
-let saveProfileTimeout;
-const debouncedSaveProfile = () => {
-    clearTimeout(saveProfileTimeout);
-    saveProfileTimeout = setTimeout(saveProfileData, 1000); 
-};
+// Função para alternar visibilidade da senha com SVGs
+function togglePasswordVisibility(inputId, toggleId) {
+    const input = $(`#${inputId}`);
+    const toggleElement = $(`#${toggleId}`); // O span que contém os SVGs
+    if (!input || !toggleElement) { console.error("Input or toggle element not found:", inputId, toggleId); return; }
+
+    const eyeOn = toggleElement.querySelector('svg[id*="eye-on"]'); 
+    const eyeOff = toggleElement.querySelector('svg[id*="eye-off"]');
+
+    if (!eyeOn || !eyeOff) { console.error("Eye SVGs not found inside:", toggleId); return; }
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        eyeOn.style.display = 'none';   
+        eyeOff.style.display = 'inline'; 
+        input.classList.add('password-input-field'); 
+    } else {
+        input.type = 'password';
+        eyeOn.style.display = 'inline'; 
+        eyeOff.style.display = 'none';  
+        input.classList.remove('password-input-field'); 
+    }
+}
 
 
 /* --- Lógica de Banco de Dados (Supabase) --- */
-
-async function loadInitialData() {
+async function loadInitialData() { 
     if (!currentUser) return;
-    console.log("Carregando dados do usuário:", currentUser.id);
-    
+    console.log("Carregando dados:", currentUser.id);
     try {
-        // **CORREÇÃO (de erro 23502):** Adicionado 'email' ao upsert 
-        // para satisfazer a restrição NOT NULL no DB.
-        const { data: profileData, error: profileError } = await supabaseClient
-            .from('profiles')
-            .upsert({ 
-                id: currentUser.id, 
-                email: currentUser.email, 
-                updated_at: new Date().toISOString() 
-            })
-            .select()
-            .single();
-
-        if (profileError && profileError.code !== '23505') { 
-             console.error('Erro ao carregar/criar perfil:', profileError);
-        } else if (profileData) {
-            // CORREÇÃO: Mapeia 'salario' e 'vale' do DB para o estado
-            state.salarioInicial = profileData.salario || 0;
-            state.valeInicial = profileData.vale || 0;
-            state.profileLoaded = true;
-            refs.salarioInput.value = state.salarioInicial > 0 ? fmt(state.salarioInicial) : '';
-            refs.valeInput.value = state.valeInicial > 0 ? fmt(state.valeInicial) : '';
-        }
-
-        const { data: gastosData, error: gastosError } = await supabaseClient
-            .from('gastos')
-            .select('*')
-            .eq('user_id', currentUser.id);
-
-        if (gastosError) {
-            console.error('Erro ao carregar gastos:', gastosError);
-        } else {
-            // CORREÇÃO: Mapeia 'description' para 'desc' e 'is_paid' para 'paid'
-            state.gastos = gastosData.map(g => ({
-                ...g,
-                desc: g.description, // Mapeia description (DB) -> desc (JS)
-                paid: g.is_paid,     // Mapeia is_paid (DB) -> paid (JS)
-                dueDay: g.due_day ? parseInt(g.due_day, 10) : null
-            })) || [];
-        }
-        
-    } catch (error)
- {
-        console.error("Erro geral ao carregar dados:", error);
-    } finally {
-        render(); 
-    }
+        const { data: profileData, error: profileError } = await supabaseClient.from('profiles').upsert({ id: currentUser.id, email: currentUser.email, updated_at: new Date().toISOString() }).select().single();
+        if (profileError && profileError.code !== '23505') console.error('Erro perfil:', profileError);
+        else if (profileData) { state.salarioInicial = profileData.salario || 0; state.valeInicial = profileData.vale || 0; state.profileLoaded = true; refs.salarioInput.value = state.salarioInicial > 0 ? fmt(state.salarioInicial) : ''; refs.valeInput.value = state.valeInicial > 0 ? fmt(state.valeInicial) : ''; }
+        const { data: gastosData, error: gastosError } = await supabaseClient.from('gastos').select('*').eq('user_id', currentUser.id);
+        if (gastosError) console.error('Erro gastos:', gastosError);
+        else state.gastos = gastosData.map(g => ({ ...g, desc: g.description, paid: g.is_paid, dueDay: g.due_day ? parseInt(g.due_day, 10) : null })) || [];
+    } catch (error) { console.error("Erro geral load:", error); } 
+    finally { render(); }
 }
-
-async function saveProfileData() {
-    if (!currentUser || !state.profileLoaded) return;
-    
-    const newSalario = unformatCurrency(refs.salarioInput.value);
-    const newVale = unformatCurrency(refs.valeInput.value);
-    
-    if (newSalario === state.salarioInicial && newVale === state.valeInicial) {
-        return; 
-    }
-
-    state.salarioInicial = newSalario;
-    state.valeInicial = newVale;
-
-    console.log("Salvando perfil...", { newSalario, newVale });
-    
-    // CORREÇÃO: Atualiza 'salario' e 'vale' no DB
-    const { error } = await supabaseClient
-        .from('profiles')
-        .update({ 
-            salario: state.salarioInicial,
-            vale: state.valeInicial,
-            updated_at: new Date().toISOString() 
-        })
-        .eq('id', currentUser.id);
-    
-    if (error) {
-        console.error("Erro ao salvar perfil:", error);
-    } else {
-        console.log("Perfil salvo com sucesso.");
-        render(); 
-    }
+async function saveProfileData() { 
+    if (!currentUser || !state.profileLoaded) return; const newSalario = unformatCurrency(refs.salarioInput.value); const newVale = unformatCurrency(refs.valeInput.value); if (newSalario === state.salarioInicial && newVale === state.valeInicial) return; state.salarioInicial = newSalario; state.valeInicial = newVale; console.log("Salvando perfil...", { newSalario, newVale }); const { error } = await supabaseClient.from('profiles').update({ salario: state.salarioInicial, vale: state.valeInicial, updated_at: new Date().toISOString() }).eq('id', currentUser.id); if (error) console.error("Erro salvar perfil:", error); else console.log("Perfil salvo.");
 }
-
-async function addGasto(gasto) {
-    if (!currentUser) return;
-    
-    // CORREÇÃO: Mapeia 'desc' (JS) para 'description' (DB) e 'paid' (JS) para 'is_paid' (DB)
-    const gastoData = {
-        user_id: currentUser.id,
-        description: gasto.desc,
-        value: gasto.value,
-        type: gasto.type,
-        source: gasto.source,
-        due_day: gasto.dueDay || null, 
-        is_paid: gasto.paid
-    };
-    
-    const { data, error } = await supabaseClient
-        .from('gastos')
-        .insert(gastoData)
-        .select()
-        .single();
-    
-    if (error) {
-        console.error("Erro ao adicionar gasto:", error);
-    } else {
-        console.log("Gasto adicionado:", data);
-        // Mapeia a resposta do DB para o estado JS
-        state.gastos.push({
-            ...data,
-            desc: data.description,
-            paid: data.is_paid,
-            dueDay: data.due_day ? parseInt(data.due_day, 10) : null
-        });
-        render();
-    }
+async function addGasto(gasto) { 
+    if (!currentUser) return; const gastoData = { user_id: currentUser.id, description: gasto.desc, value: gasto.value, type: gasto.type, source: gasto.source, due_day: gasto.dueDay || null, is_paid: gasto.paid }; const { data, error } = await supabaseClient.from('gastos').insert(gastoData).select().single(); if (error) console.error("Erro add gasto:", error); else { console.log("Gasto add:", data); state.gastos.push({ ...data, desc: data.description, paid: data.is_paid, dueDay: data.due_day ? parseInt(data.due_day, 10) : null }); render(); }
 }
-
-async function updateGasto(gastoId, updates) {
-    const dbUpdates = {};
-    // CORREÇÃO: Mapeia 'desc' e 'paid' para as colunas corretas do DB
-    if (updates.hasOwnProperty('desc')) dbUpdates.description = updates.desc;
-    if (updates.hasOwnProperty('value')) dbUpdates.value = updates.value;
-    if (updates.hasOwnProperty('type')) dbUpdates.type = updates.type;
-    if (updates.hasOwnProperty('source')) dbUpdates.source = updates.source;
-    if (updates.hasOwnProperty('dueDay')) dbUpdates.due_day = updates.dueDay || null;
-    if (updates.hasOwnProperty('paid')) dbUpdates.is_paid = updates.paid;
-    
-    const { error } = await supabaseClient
-        .from('gastos')
-        .update(dbUpdates)
-        .eq('id', gastoId);
-    
-    if (error) {
-        console.error("Erro ao atualizar gasto:", error);
-    } else {
-        console.log("Gasto atualizado:", gastoId);
-        const index = state.gastos.findIndex(g => g.id === gastoId);
-        if (index > -1) {
-            Object.assign(state.gastos[index], updates);
-            render();
-        }
-    }
+async function updateGasto(gastoId, updates) { 
+    const dbUpdates = {}; if (updates.hasOwnProperty('desc')) dbUpdates.description = updates.desc; if (updates.hasOwnProperty('value')) dbUpdates.value = updates.value; if (updates.hasOwnProperty('type')) dbUpdates.type = updates.type; if (updates.hasOwnProperty('source')) dbUpdates.source = updates.source; if (updates.hasOwnProperty('dueDay')) dbUpdates.due_day = updates.dueDay || null; if (updates.hasOwnProperty('paid')) dbUpdates.is_paid = updates.paid; const { error } = await supabaseClient.from('gastos').update(dbUpdates).eq('id', gastoId); if (error) console.error("Erro update gasto:", error); else { const index = state.gastos.findIndex(g => g.id === gastoId); if (index > -1) { Object.assign(state.gastos[index], updates); render(); } }
 }
-
-async function deleteGasto(gastoId) {
-    const { error } = await supabaseClient
-        .from('gastos')
-        .delete()
-        .eq('id', gastoId);
-
-    if (error) {
-        console.error("Erro ao remover gasto:", error);
-    } else {
-        console.log("Gasto removido:", gastoId);
-        state.gastos = state.gastos.filter(x => x.id !== gastoId);
-        selectedGastosIds = selectedGastosIds.filter(id => id !== gastoId); 
-        render();
-    }
+async function deleteGasto(gastoId) { 
+    const { error } = await supabaseClient.from('gastos').delete().eq('id', gastoId); if (error) console.error("Erro remover gasto:", error); else { console.log("Gasto removido:", gastoId); state.gastos = state.gastos.filter(x => x.id !== gastoId); selectedGastosIds = selectedGastosIds.filter(id => id !== gastoId); render(); }
 }
-
-async function deleteSelectedGastos() {
-    if (selectedGastosIds.length === 0) return;
-
-    const { error } = await supabaseClient
-        .from('gastos')
-        .delete()
-        .in('id', selectedGastosIds); 
-
-    if (error) {
-        console.error("Erro ao remover gastos selecionados:", error);
-    } else {
-        console.log("Gastos selecionados removidos.");
-        state.gastos = state.gastos.filter(g => !selectedGastosIds.includes(g.id));
-        selectedGastosIds = []; 
-        render();
-    }
+async function deleteSelectedGastos() { 
+    if (selectedGastosIds.length === 0) return; const { error } = await supabaseClient.from('gastos').delete().in('id', selectedGastosIds); if (error) console.error("Erro remover selecionados:", error); else { console.log("Selecionados removidos."); state.gastos = state.gastos.filter(g => !selectedGastosIds.includes(g.id)); selectedGastosIds = []; render(); }
 }
-
-async function clearAllUserData() {
-    if (!currentUser) return;
-    
-    if (!confirm('Atenção! Esta ação irá apagar TODOS os seus gastos e saldos salvos na nuvem. Deseja continuar?')) {
-        return;
-    }
-
-    try {
-        const { error: gastosError } = await supabaseClient
-            .from('gastos')
-            .delete()
-            .eq('user_id', currentUser.id);
-        
-        if (gastosError) throw gastosError;
-
-        // CORREÇÃO: Atualiza 'salario' e 'vale'
-        const { error: profileError } = await supabaseClient
-            .from('profiles')
-            .update({ salario: 0, vale: 0 })
-            .eq('id', currentUser.id);
-
-        if (profileError) throw profileError;
-        
-        console.log("Todos os dados do usuário foram limpos.");
-        
-        state.gastos = [];
-        state.salarioInicial = 0;
-        state.valeInicial = 0;
-        refs.salarioInput.value = '';
-        refs.valeInput.value = '';
-        render();
-        
-    } catch (error)
- {
-        console.error("Erro ao limpar dados do usuário:", error.message);
-    }
+async function clearAllUserData() { 
+    if (!currentUser || !confirm('Atenção! Apagar TODOS os dados?')) return; try { const { error: gE } = await supabaseClient.from('gastos').delete().eq('user_id', currentUser.id); if (gE) throw gE; const { error: pE } = await supabaseClient.from('profiles').update({ salario: 0, vale: 0 }).eq('id', currentUser.id); if (pE) throw pE; console.log("Dados limpos."); state = { gastos: [], salarioInicial: 0, valeInicial: 0, profileLoaded: state.profileLoaded }; refs.salarioInput.value = ''; refs.valeInput.value = ''; render(); } catch (error) { console.error("Erro limpar dados:", error.message); }
 }
-
 
 /* --- Lógica de Autenticação --- */
-
-function showAuthMessage(message, isError = false) {
-    refs.authMessage.textContent = message;
-    refs.authMessage.className = isError ? 'error' : 'success';
-}
-
-function showAccountMessage(el, message, isError = false) {
-    el.textContent = message;
-    el.className = isError ? 'auth-message error' : 'auth-message success';
-    // Limpa a mensagem após 3 segundos
-    setTimeout(() => {
-        el.textContent = '';
-        el.className = 'auth-message';
-    }, 3000);
-}
-
-async function handleLogin(email, password) {
-    showAuthMessage("Entrando...", false);
-    const { error } = await supabaseClient.auth.signInWithPassword({
-        email: email,
-        password: password,
-    });
-    
-    if (error) {
-        console.error('Erro no login:', error.message);
-        showAuthMessage(error.message, true);
-    } else {
-        showAuthMessage("", false);
-        // Sucesso! O onAuthStateChanged vai lidar com a exibição do app
-    }
-}
-
-async function handleSignUp(email, password) {
-    showAuthMessage("Criando conta...", false);
-    const { data, error } = await supabaseClient.auth.signUp({
-        email: email,
-        password: password,
-    });
-
-    if (error) {
-        console.error('Erro no cadastro:', error.message);
-        showAuthMessage(error.message, true);
-    } else {
-        console.log('Cadastro realizado:', data);
-        showAuthMessage("Cadastro realizado! Verifique seu e-mail para confirmar a conta.", false);
-    }
-}
-
-// NOVO: Função de Esqueci a Senha
-async function handleForgotPassword(e) {
-    e.preventDefault();
-    const email = refs.authEmailInput.value;
-    if (!email) {
-        showAuthMessage("Por favor, digite seu e-mail primeiro.", true);
-        return;
-    }
-    
-    showAuthMessage("Enviando link de redefinição...", false);
-    
-    // Pega a URL base para o redirecionamento
-    const redirectTo = window.location.origin + window.location.pathname;
-
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectTo,
-    });
-
-    if (error) {
-        console.error('Erro ao redefinir senha:', error.message);
-        showAuthMessage(error.message, true);
-    } else {
-        console.log('Link de redefinição enviado');
-        showAuthMessage("E-mail de redefinição enviado. Verifique sua caixa de entrada.", false);
-    }
-}
-
-async function logout() {
-    const { error } = await supabaseClient.auth.signOut();
-    if (error) {
-        console.error('Erro ao sair:', error);
-    } else {
-        currentUser = null;
-        state.gastos = [];
-        state.salarioInicial = 0;
-        state.valeInicial = 0;
-        state.profileLoaded = false;
-    }
-}
-
-function toggleAuthMode(toLogin) {
-    isLoginMode = toLogin;
-    showAuthMessage("", false); // Limpa mensagens
-    
-    if (isLoginMode) {
-        refs.authTitle.textContent = "Entrar";
-        refs.authSubtitle.textContent = "Acesse sua conta para ver seus gastos.";
-        refs.authSubmitBtn.textContent = "Entrar";
-        refs.authToggleLogin.classList.add('active');
-        refs.authToggleRegister.classList.remove('active');
-        refs.forgotPasswordLink.style.display = 'block'; // NOVO: Mostra "Esqueci a senha"
-    } else {
-        refs.authTitle.textContent = "Cadastrar";
-        refs.authSubtitle.textContent = "Crie uma nova conta para salvar seus dados.";
-        refs.authSubmitBtn.textContent = "Criar Conta";
-        refs.authToggleLogin.classList.remove('active');
-        refs.authToggleRegister.classList.add('active');
-        refs.forgotPasswordLink.style.display = 'none'; // NOVO: Esconde "Esqueci a senha"
-    }
-}
-
-// Listener principal de autenticação
-supabaseClient.auth.onAuthStateChange((event, session) => { // CORREÇÃO: onAuthStateChanged -> onAuthStateChange
+function showAuthMessage(message, isError = false) { refs.authMessage.textContent = message; refs.authMessage.className = isError ? 'error' : 'success'; }
+function showManageAccountMessage(message, isError = false, autoClear = true) { const el = refs.manageAccountMessage; el.textContent = message; el.className = isError ? 'auth-message error' : 'auth-message success'; if (autoClear) setTimeout(() => { el.textContent = ''; el.className = 'auth-message'; }, 3000); }
+async function handleLogin(email, password) { showAuthMessage("Entrando...", false); const { error } = await supabaseClient.auth.signInWithPassword({ email, password }); if (error) { console.error('Erro login:', error.message); showAuthMessage(error.message, true); } else showAuthMessage("", false); }
+async function handleSignUp(email, password) { showAuthMessage("Criando...", false); const { data, error } = await supabaseClient.auth.signUp({ email, password }); if (error) { console.error('Erro cadastro:', error.message); showAuthMessage(error.message, true); } else { console.log('Cadastrado:', data); showAuthMessage("Verifique seu e-mail.", false); } }
+async function handleForgotPassword(e) { e.preventDefault(); const email = refs.authEmailInput.value; if (!email) { showAuthMessage("Digite e-mail.", true); return; } showAuthMessage("Enviando...", false); const redirectTo = window.location.origin + window.location.pathname; const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo }); if (error) { console.error('Erro reset:', error.message); showAuthMessage(error.message, true); } else { console.log('Link enviado'); showAuthMessage("E-mail enviado.", false); } }
+async function logout() { const { error } = await supabaseClient.auth.signOut(); if (error) console.error('Erro sair:', error); else { currentUser = null; state = { gastos: [], salarioInicial: 0.00, valeInicial: 0.00, profileLoaded: false }; } }
+function toggleAuthMode(toLogin) { isLoginMode = toLogin; showAuthMessage("", false); refs.authTitle.textContent = toLogin ? "Entrar" : "Cadastrar"; refs.authSubtitle.textContent = toLogin ? "Acesse sua conta." : "Crie uma nova conta."; refs.authSubmitBtn.textContent = toLogin ? "Entrar" : "Criar Conta"; refs.authToggleLogin.classList.toggle('active', toLogin); refs.authToggleRegister.classList.toggle('active', !toLogin); refs.forgotPasswordLink.style.display = toLogin ? 'block' : 'none'; }
+supabaseClient.auth.onAuthStateChange((event, session) => { 
+    if (!refs.authScreen) { setTimeout(() => supabaseClient.auth.onAuthStateChange(event, session), 50); return; }
     if (session && session.user) {
-        currentUser = session.user;
-        console.log('Usuário logado:', currentUser.email);
-        
-        refs.authScreen.style.display = 'none';
-        refs.appContainer.style.display = 'flex';
-        
-        // Atualiza info do usuário (sem avatar do Google)
-        const firstLetter = currentUser.email ? currentUser.email[0].toUpperCase() : 'U';
-        refs.userAvatar.src = `https://placehold.co/40x40/11C76F/FFFFFF?text=${firstLetter}`;
-        refs.userEmail.textContent = currentUser.email;
-        
+        currentUser = session.user; console.log('Logado:', currentUser.email);
+        refs.authScreen.style.display = 'none'; refs.appContainer.style.display = 'flex';
+        const firstLetter = currentUser.email ? currentUser.email[0].toUpperCase() : 'U'; refs.userAvatar.src = `https://placehold.co/40x40/11C76F/FFFFFF?text=${firstLetter}`; refs.userEmail.textContent = currentUser.email;
         loadInitialData();
     } else {
-        // Usuário deslogado
-        currentUser = null;
-        console.log('Usuário deslogado.');
-        
-        refs.authScreen.style.display = 'flex';
-        refs.appContainer.style.display = 'none';
-        
-        // Esconde os cards flutuantes se o usuário for deslogado
-        refs.addFormCard.classList.add('hidden');
-        refs.manageAccountCard.classList.add('hidden');
-        refs.openAddFormBtn.classList.remove('active');
+        currentUser = null; console.log('Deslogado.');
+        refs.authScreen.style.display = 'flex'; refs.appContainer.style.display = 'none';
+        refs.addFormCard.classList.add('hidden'); refs.manageAccountCard.classList.add('hidden'); refs.openAddFormBtn.classList.remove('active');
     }
 });
 
-
 /* --- Lógica de Gerenciamento de Conta --- */
-
-async function handleUpdateEmail(e) {
-    e.preventDefault();
-    const newEmail = refs.updateEmailInput.value;
-    if (!newEmail || newEmail === currentUser.email) {
-        showAccountMessage(refs.updateEmailMessage, "Por favor, insira um novo e-mail.", true);
-        return;
-    }
-    
-    showAccountMessage(refs.updateEmailMessage, "Salvando e-mail...", false);
-    
-    const { error } = await supabaseClient.auth.updateUser({ email: newEmail });
-    
-    if (error) {
-        console.error('Erro ao atualizar e-mail:', error.message);
-        showAccountMessage(refs.updateEmailMessage, error.message, true);
-    } else {
-        console.log('E-mail atualizado');
-        showAccountMessage(refs.updateEmailMessage, "E-mail salvo! Verifique sua caixa de entrada (antiga e nova) para confirmar.", false);
-        refs.updateEmailInput.value = '';
-        // Atualiza o e-mail na interface após a confirmação (o onAuthStateChange fará isso)
-    }
+async function handleManageAccountSubmit(e) { 
+    e.preventDefault(); const newEmail = refs.updateEmailInput.value.trim(); const newPassword = refs.updatePasswordInput.value; const messageEl = refs.manageAccountMessage; const submitBtn = e.target.querySelector('button[type="submit"]'); const wantsEmailChange = newEmail && newEmail !== currentUser.email; const wantsPasswordChange = newPassword; if (!wantsEmailChange && !wantsPasswordChange) { showManageAccountMessage("Preencha e-mail ou senha.", true); return; } if (wantsPasswordChange && newPassword.length < 6) { showManageAccountMessage("Nova senha: min. 6 caracteres.", true); return; } const currentPassword = prompt("Senha atual para confirmar:"); if (currentPassword === null) return; if (!currentPassword) { showManageAccountMessage("Senha atual obrigatória.", true); return; } submitBtn.disabled = true; showManageAccountMessage("Verificando...", false, false); const { error: signInError } = await supabaseClient.auth.signInWithPassword({ email: currentUser.email, password: currentPassword }); if (signInError) { console.error('Erro senha:', signInError.message); showManageAccountMessage("Senha atual incorreta.", true); submitBtn.disabled = false; return; } const updates = {}; if (wantsEmailChange) updates.email = newEmail; if (wantsPasswordChange) { if (newPassword === currentPassword) { showManageAccountMessage("Nova senha igual à atual.", true); submitBtn.disabled = false; return; } updates.password = newPassword; } if (Object.keys(updates).length > 0) { const { error: updateError } = await supabaseClient.auth.updateUser(updates); if (updateError) { console.error('Erro update:', updateError.message); showManageAccountMessage(`Erro: ${updateError.message}`, true); } else { let msg = "Salvo!"; if (wantsEmailChange) msg += " Verifique e-mails."; console.log('Atualizado:', updates); showManageAccountMessage(msg, false); refs.updateEmailInput.value = ''; refs.updatePasswordInput.value = ''; } } else showManageAccountMessage("Nada a alterar.", false); submitBtn.disabled = false;
 }
 
-async function handleUpdatePassword(e) {
-    e.preventDefault();
-    const newPassword = refs.updatePasswordInput.value;
-    if (!newPassword || newPassword.length < 6) {
-        showAccountMessage(refs.updatePasswordMessage, "A senha deve ter no mínimo 6 caracteres.", true);
-        return;
-    }
-
-    showAccountMessage(refs.updatePasswordMessage, "Salvando senha...", false);
-    
-    const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-    
-    if (error) {
-        console.error('Erro ao atualizar senha:', error.message);
-        showAccountMessage(refs.updatePasswordMessage, error.message, true);
-    } else {
-        console.log('Senha atualizada');
-        showAccountMessage(refs.updatePasswordMessage, "Senha alterada com sucesso!", false);
-        refs.updatePasswordInput.value = '';
-    }
+/* --- Renderização da Interface --- */
+function handleSelectAll(source, isChecked) { 
+    const sourceGastos = state.gastos.filter(g => g.source === source); sourceGastos.forEach(g => { const isSel = selectedGastosIds.includes(g.id); if (isChecked && !isSel) selectedGastosIds.push(g.id); else if (!isChecked && isSel) selectedGastosIds = selectedGastosIds.filter(id => id !== g.id); }); render(); 
 }
-
-
-/* --- Renderização da Interface (App Principal) --- */
-
-function handleSelectAll(source, isChecked) {
-    const sourceGastos = state.gastos.filter(g => g.source === source);
-    
-    sourceGastos.forEach(gasto => {
-        const isSelected = selectedGastosIds.includes(gasto.id);
-        if (isChecked && !isSelected) {
-            selectedGastosIds.push(gasto.id);
-        } else if (!isChecked && isSelected) {
-            selectedGastosIds = selectedGastosIds.filter(id => id !== gasto.id);
-        }
-    });
-    render(); 
+async function handleMarkPaidAll(source, isChecked) { 
+    const sourceGastos = state.gastos.filter(g => g.source === source); const idsToUpdate = sourceGastos.map(g => g.id); sourceGastos.forEach(g => { g.paid = isChecked; }); render(); if (idsToUpdate.length > 0) { const { error } = await supabaseClient.from('gastos').update({ is_paid: isChecked }).in('id', idsToUpdate); if (error) console.error("Erro marcar pagos:", error); }
 }
-
-async function handleMarkPaidAll(source, isChecked) {
-    const sourceGastos = state.gastos.filter(g => g.source === source);
-    
-    sourceGastos.forEach(gasto => {
-        gasto.paid = isChecked;
-    });
-
-    const idsToUpdate = sourceGastos.map(g => g.id);
-    if (idsToUpdate.length > 0) {
-        // CORREÇÃO: Atualiza a coluna 'is_paid'
-         const { error } = await supabaseClient
-            .from('gastos')
-            .update({ is_paid: isChecked })
-            .in('id', idsToUpdate);
-        
-        if (error) console.error("Erro ao marcar todos como pagos:", error);
-    }
-    
-    render(); 
+const handleSelectAllSalario = (e) => handleSelectAll('salario', e.target.checked); const handleMarkPaidAllSalario = (e) => handleMarkPaidAll('salario', e.target.checked); const handleSelectAllVale = (e) => handleSelectAll('vale', e.target.checked); const handleMarkPaidAllVale = (e) => handleMarkPaidAll('vale', e.target.checked);
+function updateBulkActionButtons(source) { 
+    const isSalario = source === 'salario'; const sourceGastos = state.gastos.filter(g => g.source === source); const allSelected = sourceGastos.length > 0 && sourceGastos.every(g => selectedGastosIds.includes(g.id)); const allPaid = sourceGastos.length > 0 && sourceGastos.every(g => g.paid); const selectBtn = isSalario ? refs.mobileSelectAllSalarioBtn : refs.mobileSelectAllValeBtn; const paidBtn = isSalario ? refs.mobileMarkPaidAllSalarioBtn : refs.mobileMarkPaidAllValeBtn; if (selectBtn) { selectBtn.textContent = allSelected ? "Desselecionar" : "Selecionar Todos"; selectBtn.disabled = sourceGastos.length === 0 || isEditing; } if (paidBtn) { paidBtn.textContent = allPaid ? "Marcar Não Pagos" : "Marcar Pagos"; paidBtn.disabled = sourceGastos.length === 0 || isEditing; }
 }
-
-const handleSelectAllSalario = (e) => handleSelectAll('salario', e.target.checked);
-const handleMarkPaidAllSalario = (e) => handleMarkPaidAll('salario', e.target.checked);
-const handleSelectAllVale = (e) => handleSelectAll('vale', e.target.checked);
-const handleMarkPaidAllVale = (e) => handleMarkPaidAll('vale', e.target.checked);
-
-function updateHeaderCheckboxes(source, type) {
-    const isSalario = source === 'salario';
-    const allChecks = $$(`#${source}Table tbody .${type === 'select' ? 'select-check' : 'status-check'}`);
-    const allChecked = Array.from(allChecks).every(chk => chk.checked);
-    
-    let headerChk, listener;
-    
-    if (type === 'select') {
-        headerChk = isSalario ? refs.selectAllSalario : refs.selectAllVale;
-        listener = isSalario ? handleSelectAllSalario : handleSelectAllVale;
-    } else {
-        headerChk = isSalario ? refs.markPaidAllSalario : refs.markPaidAllVale;
-        listener = isSalario ? handleMarkPaidAllSalario : handleMarkPaidAllVale;
-    }
-    
-    headerChk.removeEventListener('change', listener);
-    headerChk.checked = allChecks.length > 0 && allChecked;
-    headerChk.addEventListener('change', listener);
-    headerChk.disabled = allChecks.length === 0 || isEditing;
+function handleMobileSelectAll(source) { const sourceGastos = state.gastos.filter(g => g.source === source); const allSelected = sourceGastos.length > 0 && sourceGastos.every(g => selectedGastosIds.includes(g.id)); handleSelectAll(source, !allSelected); }
+function handleMobileMarkPaidAll(source) { const sourceGastos = state.gastos.filter(g => g.source === source); const allPaid = sourceGastos.length > 0 && sourceGastos.every(g => g.paid); handleMarkPaidAll(source, !allPaid); }
+function updateHeaderCheckboxes(source, type) { 
+    const isSalario = source === 'salario'; const allChecks = $$(`#${source}Table tbody .${type === 'select' ? 'select-check' : 'status-check'}`); const allChecked = Array.from(allChecks).every(chk => chk.checked); let headerChk, listener; if (type === 'select') { headerChk = isSalario ? refs.selectAllSalario : refs.selectAllVale; listener = isSalario ? handleSelectAllSalario : handleSelectAllVale; } else { headerChk = isSalario ? refs.markPaidAllSalario : refs.markPaidAllVale; listener = isSalario ? handleMarkPaidAllSalario : handleMarkPaidAllVale; } if (headerChk) { headerChk.removeEventListener('change', listener); headerChk.checked = allChecks.length > 0 && allChecked; headerChk.addEventListener('change', listener); headerChk.disabled = allChecks.length === 0 || isEditing; } updateBulkActionButtons(source); 
 }
-
-function handleRowClick(event) {
-    const interactiveElements = ['INPUT', 'BUTTON', 'SELECT', 'A'];
-    if (interactiveElements.includes(event.target.tagName) || 
-        event.target.closest('.actions-cell') ||
-        event.target.closest('.edit-mode')) {
-        return;
-    }
-    
-    const tr = event.currentTarget;
-    const isMobile = window.innerWidth <= 550;
-
-    if (isMobile && !isEditing) {
-        tr.classList.toggle('expanded');
-    }
+function handleRowClick(event) { 
+    const interactive = ['INPUT', 'BUTTON', 'SELECT', 'A']; if (interactive.includes(event.target.tagName) || event.target.closest('.actions-cell') || event.target.closest('.edit-mode')) return; const tr = event.currentTarget; const isMobile = window.innerWidth <= 550; if (isMobile && !isEditing) tr.classList.toggle('expanded');
 }
-
-function createTableRow(gasto) {
-    const tr = document.createElement('tr');
-    tr.dataset.id = gasto.id;
-    
-    tr.addEventListener('click', handleRowClick);
-
-    // Coluna Sel.
-    const tdSelect = document.createElement('td');
-    tdSelect.dataset.label = 'Sel.';
-    const chkSelect = document.createElement('input');
-    chkSelect.type = 'checkbox';
-    chkSelect.className = 'select-check';
-    chkSelect.checked = selectedGastosIds.includes(gasto.id);
-    chkSelect.disabled = isEditing;
-    chkSelect.addEventListener('change', () => {
-        if (chkSelect.checked) {
-            if (!selectedGastosIds.includes(gasto.id)) {
-                selectedGastosIds.push(gasto.id);
-            }
-        } else {
-            selectedGastosIds = selectedGastosIds.filter(id => id !== gasto.id);
-        }
-        updateSelectionTotal(); 
-        updateHeaderCheckboxes(gasto.source, 'select'); 
-    });
-    tdSelect.appendChild(chkSelect);
-    tr.appendChild(tdSelect); 
-
-    // Demais colunas
-    const tdDesc = document.createElement('td');
-    tdDesc.dataset.label = 'Descrição';
-    // O estado 'gasto.desc' já foi mapeado em loadInitialData
-    tdDesc.innerHTML = `<span class="data-field" data-key="desc">${gasto.desc}</span>`;
-    tr.appendChild(tdDesc);
-
-    const tdVal = document.createElement('td');
-    tdVal.dataset.label = 'Valor';
-    tdVal.innerHTML = `<span class="data-field" data-key="value">${fmt(gasto.value)}</span>`;
-    tr.appendChild(tdVal);
-
-    const tdType = document.createElement('td');
-    tdType.dataset.label = 'Tipo';
-    tdType.innerHTML = `<span class="data-field" data-key="type">${gasto.type === 'fixo' ? 'Fixo' : 'Variável'}</span>`;
-    tr.appendChild(tdType);
-
-    const tdDueDay = document.createElement('td');
-    tdDueDay.dataset.label = 'Vencimento';
-    tdDueDay.innerHTML = `<span class="data-field" data-key="dueDay">${gasto.dueDay || '-'}</span>`;
-    tr.appendChild(tdDueDay);
-
-    // Coluna Pago
-    const tdPaid = document.createElement('td');
-    tdPaid.dataset.label = 'Pago';
-    const chk = document.createElement('input');
-    chk.type = 'checkbox';
-    chk.className = 'status-check';
-    // O estado 'gasto.paid' já foi mapeado em loadInitialData
-    chk.checked = gasto.paid;
-    chk.disabled = isEditing;
-    chk.addEventListener('change', () => {
-        const newPaidStatus = chk.checked;
-        // A função updateGasto já faz o mapeamento de 'paid' para 'is_paid'
-        updateGasto(gasto.id, { paid: newPaidStatus }); 
-    });
-    tdPaid.appendChild(chk);
-    tr.appendChild(tdPaid);
-
-    // Coluna Ações
-    const tdActions = document.createElement('td');
-    tdActions.dataset.label = 'Ação';
-    tdActions.className = 'actions-cell';
-    const btnDelete = document.createElement('button');
-    btnDelete.className = 'btn danger-ghost small';
-    btnDelete.textContent = 'X';
-    btnDelete.style.display = isEditing ? 'none' : 'inline-block';
-    btnDelete.addEventListener('click', () => {
-        if (confirm(`Remover "${gasto.desc}"?`)) {
-            deleteGasto(gasto.id);
-        }
-    });
-    tdActions.appendChild(btnDelete);
-    tr.appendChild(tdActions);
-
+function createTableRow(gasto) { 
+    const tr = document.createElement('tr'); tr.dataset.id = gasto.id; tr.addEventListener('click', handleRowClick);
+    const tdSelect = document.createElement('td'); tdSelect.dataset.label = 'Sel.'; const chkSelect = document.createElement('input'); chkSelect.type = 'checkbox'; chkSelect.className = 'select-check'; chkSelect.checked = selectedGastosIds.includes(gasto.id); chkSelect.disabled = isEditing; chkSelect.addEventListener('change', () => { if (chkSelect.checked) { if (!selectedGastosIds.includes(gasto.id)) selectedGastosIds.push(gasto.id); } else selectedGastosIds = selectedGastosIds.filter(id => id !== gasto.id); updateSelectionTotal(); updateHeaderCheckboxes(gasto.source, 'select'); }); tdSelect.appendChild(chkSelect); tr.appendChild(tdSelect); 
+    const tdDesc = document.createElement('td'); tdDesc.dataset.label = 'Descrição'; tdDesc.innerHTML = `<span class="data-field" data-key="desc">${gasto.desc}</span>`; tr.appendChild(tdDesc);
+    const tdVal = document.createElement('td'); tdVal.dataset.label = 'Valor'; tdVal.innerHTML = `<span class="data-field" data-key="value">${fmt(gasto.value)}</span>`; tr.appendChild(tdVal);
+    const tdType = document.createElement('td'); tdType.dataset.label = 'Tipo'; tdType.innerHTML = `<span class="data-field" data-key="type">${gasto.type === 'fixo' ? 'Fixo' : 'Variável'}</span>`; tr.appendChild(tdType);
+    const tdDueDay = document.createElement('td'); tdDueDay.dataset.label = 'Vencimento'; tdDueDay.innerHTML = `<span class="data-field" data-key="dueDay">${gasto.dueDay || '-'}</span>`; tr.appendChild(tdDueDay);
+    const tdPaid = document.createElement('td'); tdPaid.dataset.label = 'Pago'; const chk = document.createElement('input'); chk.type = 'checkbox'; chk.className = 'status-check'; chk.checked = gasto.paid; chk.disabled = isEditing; chk.addEventListener('change', () => { updateGasto(gasto.id, { paid: chk.checked }); }); tdPaid.appendChild(chk); tr.appendChild(tdPaid);
+    const tdActions = document.createElement('td'); tdActions.dataset.label = 'Ação'; tdActions.className = 'actions-cell'; const btnDelete = document.createElement('button'); btnDelete.className = 'btn delete-item-btn'; btnDelete.innerHTML = '&#x2715;'; /* Usando HTML entity para X */ btnDelete.style.display = isEditing ? 'none' : 'inline-flex'; btnDelete.addEventListener('click', (e) => { e.stopPropagation(); if (confirm(`Remover "${gasto.desc}"?`)) deleteGasto(gasto.id); }); tdActions.appendChild(btnDelete); tr.appendChild(tdActions);
     return tr;
 }
-
-function render() {
-    if (!currentUser) return; 
-
-    const entradasTotais = state.salarioInicial + state.valeInicial;
-    const gastosPagos = state.gastos
-        .filter(g => g.paid) // O estado 'g.paid' já foi mapeado
-        .reduce((sum, gasto) => sum + gasto.value, 0);
-
-    const saldoFinal = entradasTotais - gastosPagos;
-
-    refs.saldoFinalEl.textContent = fmt(saldoFinal);
-    refs.saldoFinalEl.style.color = saldoFinal >= 0 ? 'var(--purple-main)' : 'var(--red-alert)';
-
-    const gastosSalario = state.gastos.filter(g => g.source === 'salario');
-    const gastosVale = state.gastos.filter(g => g.source === 'vale');
-
-    gastosSalario.sort((a, b) => (a.type === 'fixo' ? -1 : 1));
-    gastosVale.sort((a, b) => (a.type === 'fixo' ? -1 : 1));
-
-    refs.salarioTableBody.innerHTML = '';
-    gastosSalario.forEach(gasto => refs.salarioTableBody.appendChild(createTableRow(gasto)));
-
-    refs.valeTableBody.innerHTML = '';
-    gastosVale.forEach(gasto => refs.valeTableBody.appendChild(createTableRow(gasto)));
-
-    updateHeaderCheckboxes('salario', 'select');
-    updateHeaderCheckboxes('salario', 'paid');
-    updateHeaderCheckboxes('vale', 'select');
-    updateHeaderCheckboxes('vale', 'paid');
-    updateSelectionTotal(); 
+function render() { 
+    if (!currentUser) return; const entradas = state.salarioInicial + state.valeInicial; const pagos = state.gastos.filter(g => g.paid).reduce((s, g) => s + g.value, 0); const saldo = entradas - pagos; refs.saldoFinalEl.textContent = fmt(saldo); refs.saldoFinalEl.style.color = saldo >= 0 ? 'var(--purple-main)' : 'var(--red-alert)'; const gSalario = state.gastos.filter(g => g.source === 'salario').sort((a,b)=>(a.type==='fixo'?-1:1)); const gVale = state.gastos.filter(g => g.source === 'vale').sort((a,b)=>(a.type==='fixo'?-1:1)); refs.salarioTableBody.innerHTML = ''; gSalario.forEach(g => refs.salarioTableBody.appendChild(createTableRow(g))); refs.valeTableBody.innerHTML = ''; gVale.forEach(g => refs.valeTableBody.appendChild(createTableRow(g))); updateHeaderCheckboxes('salario', 'select'); updateHeaderCheckboxes('salario', 'paid'); updateHeaderCheckboxes('vale', 'select'); updateHeaderCheckboxes('vale', 'paid'); updateSelectionTotal(); 
 }
-
-function updateSelectionTotal() {
-    const selectedGastos = state.gastos.filter(g => selectedGastosIds.includes(g.id));
-    const total = selectedGastos.reduce((sum, gasto) => sum + gasto.value, 0);
-    const count = selectedGastos.length;
-
-    refs.selectedTotalEl.textContent = fmt(total);
-    refs.selectedCountEl.textContent = `${count} conta${count !== 1 ? 's' : ''} selecionada${count !== 1 ? 's' : ''}`;
-    refs.removeSelectedBtn.textContent = `Remover Selecionada${count !== 1 ? 's' : ''} (${count})`;
-
-    if (count > 0 && !isEditing) {
-        refs.selectionActions.classList.remove('hidden');
-    } else {
-        refs.selectionActions.classList.add('hidden');
-    }
+function updateSelectionTotal() { 
+    const sel = state.gastos.filter(g => selectedGastosIds.includes(g.id)); const total = sel.reduce((s, g) => s + g.value, 0); const count = sel.length; refs.selectedTotalEl.textContent = fmt(total); refs.selectedCountEl.textContent = `${count} selecionada${count !== 1 ? 's' : ''}`; refs.removeSelectedBtn.textContent = `Remover (${count})`; refs.selectionActions.classList.toggle('hidden', count === 0 || isEditing);
 }
-
-function removeSelectedGastos() {
-    if (selectedGastosIds.length === 0) return;
-
-    if (confirm(`Tem certeza que deseja remover ${selectedGastosIds.length} conta(s) selecionada(s)?`)) {
-        deleteSelectedGastos(); 
-    }
+function removeSelectedGastos() { if (selectedGastosIds.length === 0 || !confirm(`Remover ${selectedGastosIds.length}?`)) return; deleteSelectedGastos(); }
+function toggleEditMode(enable) { 
+    isEditing = enable; refs.editAllBtn.style.display = enable ? 'none' : 'inline-block'; refs.saveAllBtn.style.display = enable ? 'inline-block' : 'none'; refs.cancelEditBtn.style.display = enable ? 'inline-block' : 'none'; refs.btnClear.style.display = enable ? 'none' : 'inline-block'; refs.openAddFormBtn.style.display = enable ? 'none' : 'block'; refs.selectionActions.classList.add('hidden'); refs.addFormCard.classList.add('hidden'); refs.manageAccountCard.classList.add('hidden'); refs.openAddFormBtn.classList.remove('active'); refs.exportCsvBtn.disabled = enable; refs.importCsvBtn.disabled = enable; refs.manageAccountBtn.disabled = enable; if(refs.mobileSelectAllSalarioBtn) refs.mobileSelectAllSalarioBtn.disabled = enable; if(refs.mobileMarkPaidAllSalarioBtn) refs.mobileMarkPaidAllSalarioBtn.disabled = enable; if(refs.mobileSelectAllValeBtn) refs.mobileSelectAllValeBtn.disabled = enable; if(refs.mobileMarkPaidAllValeBtn) refs.mobileMarkPaidAllValeBtn.disabled = enable; $$('#salarioTable tbody tr, #valeTable tbody tr').forEach((tr) => { const g = state.gastos.find(g => g.id == tr.dataset.id); if (!g) return; const tds = tr.querySelectorAll('td'); tds[0].querySelector('.select-check').disabled = enable; tds[1].innerHTML = enable ? `<input type="text" class="edit-mode" data-key="desc" value="${g.desc}">` : `<span class="data-field" data-key="desc">${g.desc}</span>`; tds[2].innerHTML = enable ? `<input type="text" class="edit-mode money-input" data-key="value" value="${fmt(g.value)}">` : `<span class="data-field" data-key="value">${fmt(g.value)}</span>`; tds[3].innerHTML = enable ? `<select class="edit-mode edit-mode-select" data-key="type"><option value="fixo" ${g.type==='fixo'?'selected':''}>Fixo</option><option value="variavel" ${g.type==='variavel'?'selected':''}>Variável</option></select>` : `<span class="data-field" data-key="type">${g.type==='fixo'?'Fixo':'Variável'}</span>`; tds[4].innerHTML = enable ? `<input type="number" min="1" max="31" class="edit-mode" data-key="dueDay" value="${g.dueDay||''}">` : `<span class="data-field" data-key="dueDay">${g.dueDay||'-'}</span>`; tds[5].querySelector('.status-check').disabled = enable; tds[6].style.display = enable ? 'none' : 'table-cell'; }); if (refs.selectAllSalario) refs.selectAllSalario.disabled = enable; if (refs.markPaidAllSalario) refs.markPaidAllSalario.disabled = enable; if (refs.selectAllVale) refs.selectAllVale.disabled = enable; if (refs.markPaidAllVale) refs.markPaidAllVale.disabled = enable; if (enable) $$('.money-input').forEach(input => input.addEventListener('input', formatCurrencyInput)); else { refs.exportCsvBtn.disabled = false; refs.importCsvBtn.disabled = false; refs.manageAccountBtn.disabled = false; if(refs.mobileSelectAllSalarioBtn) refs.mobileSelectAllSalarioBtn.disabled = false; if(refs.mobileMarkPaidAllSalarioBtn) refs.mobileMarkPaidAllSalarioBtn.disabled = false; if(refs.mobileSelectAllValeBtn) refs.mobileSelectAllValeBtn.disabled = false; if(refs.mobileMarkPaidAllValeBtn) refs.mobileMarkPaidAllValeBtn.disabled = false; }
 }
-
-function toggleEditMode(enable) {
-    isEditing = enable;
-
-    refs.editAllBtn.style.display = enable ? 'none' : 'inline-block';
-    refs.saveAllBtn.style.display = enable ? 'inline-block' : 'none';
-    refs.cancelEditBtn.style.display = enable ? 'inline-block' : 'none';
-    refs.btnClear.style.display = enable ? 'none' : 'inline-block';
-    refs.openAddFormBtn.style.display = enable ? 'none' : 'block';
-    refs.selectionActions.classList.add('hidden');
-    
-    // Esconde os cards flutuantes ao entrar no modo de edição
-    refs.addFormCard.classList.add('hidden');
-    refs.manageAccountCard.classList.add('hidden');
-    refs.openAddFormBtn.classList.remove('active');
-    
-    // NOVO: Desabilita botões CSV e Conta no modo de edição
-    refs.exportCsvBtn.disabled = enable;
-    refs.importCsvBtn.disabled = enable;
-    refs.manageAccountBtn.disabled = enable;
-
-    const allGastosRows = $$('#salarioTable tbody tr, #valeTable tbody tr');
-    allGastosRows.forEach((tr) => {
-        const gasto = state.gastos.find(g => g.id == tr.dataset.id); 
-        if (!gasto) return;
-        
-        const tds = tr.querySelectorAll('td');
-        
-        tds[0].querySelector('.select-check').disabled = enable;
-
-        tds[1].innerHTML = enable
-            ? `<input type="text" class="edit-mode" data-key="desc" value="${gasto.desc}">`
-            : `<span class="data-field" data-key="desc">${gasto.desc}</span>`;
-
-        tds[2].innerHTML = enable
-            ? `<input type="text" class="edit-mode money-input" data-key="value" value="${fmt(gasto.value)}">`
-            : `<span class="data-field" data-key="value">${fmt(gasto.value)}</span>`;
-
-        tds[3].innerHTML = enable
-            ? `<select class="edit-mode edit-mode-select" data-key="type">
-                <option value="fixo" ${gasto.type === 'fixo' ? 'selected' : ''}>Fixo</option>
-                <option value="variavel" ${gasto.type === 'variavel' ? 'selected' : ''}>Variável</option>
-              </select>`
-            : `<span class="data-field" data-key="type">${gasto.type === 'fixo' ? 'Fixo' : 'Variável'}</span>`;
-
-        tds[4].innerHTML = enable
-            ? `<input type="number" min="1" max="31" class="edit-mode" data-key="dueDay" value="${gasto.dueDay || ''}">`
-            : `<span class="data-field" data-key="dueDay">${gasto.dueDay || '-'}</span>`;
-
-        tds[5].querySelector('.status-check').disabled = enable;
-        tds[6].style.display = enable ? 'none' : 'table-cell';
-    });
-    
-    refs.selectAllSalario.disabled = enable;
-    refs.markPaidAllSalario.disabled = enable;
-    refs.selectAllVale.disabled = enable;
-    refs.markPaidAllVale.disabled = enable;
-
-    if (enable) {
-        $$('.money-input').forEach(input => {
-            input.addEventListener('input', formatCurrencyInput);
-        });
-    } else {
-        // Habilita botões ao sair do modo de edição
-        refs.exportCsvBtn.disabled = false;
-        refs.importCsvBtn.disabled = false;
-        refs.manageAccountBtn.disabled = false;
-    }
+async function saveAllChanges() { 
+    const updates = []; $$('#salarioTable tbody tr, #valeTable tbody tr').forEach((tr) => { const gId = tr.dataset.id; const gState = state.gastos.find(g => g.id == gId); if (!gState) return; const dIn = tr.querySelector('[data-key="desc"]'); const vIn = tr.querySelector('[data-key="value"]'); const tSel = tr.querySelector('[data-key="type"]'); const ddIn = tr.querySelector('[data-key="dueDay"]'); const nD = dIn.value.trim(); const nV = unformatCurrency(vIn.value); const nT = tSel.value; const nDD = ddIn.value.trim() ? parseInt(ddIn.value.trim(), 10) : null; if (nD !== gState.desc || nV !== gState.value || nT !== gState.type || nDD !== gState.dueDay) updates.push(updateGasto(gId, { desc: nD, value: nV, type: nT, dueDay: nDD })); }); await Promise.all(updates); console.log("Salvo."); toggleEditMode(false); 
 }
+function toggleAddFormCard() { const hide = refs.addFormCard.classList.contains('hidden'); refs.addFormCard.classList.toggle('hidden', !hide); refs.openAddFormBtn.classList.toggle('active', hide); if (hide) refs.manageAccountCard.classList.add('hidden'); }
+function toggleManageAccountCard() { const hide = refs.manageAccountCard.classList.contains('hidden'); refs.manageAccountCard.classList.toggle('hidden', !hide); if (hide) { refs.addFormCard.classList.add('hidden'); refs.openAddFormBtn.classList.remove('active'); refs.updateEmailInput.value = ''; refs.updatePasswordInput.value = ''; showManageAccountMessage("", false); } }
 
-async function saveAllChanges() {
-    const allGastosRows = $$('#salarioTable tbody tr, #valeTable tbody tr');
-    const updatePromises = []; 
-
-    allGastosRows.forEach((tr) => {
-        const gastoId = tr.dataset.id;
-        const gastoState = state.gastos.find(g => g.id == gastoId);
-        if (!gastoState) return;
-
-        const descInput = tr.querySelector('[data-key="desc"]');
-        const valueInput = tr.querySelector('[data-key="value"]');
-        const typeSelect = tr.querySelector('[data-key="type"]');
-        const dueDayInput = tr.querySelector('[data-key="dueDay"]');
-
-        const newDesc = descInput.value.trim();
-        const newValue = unformatCurrency(valueInput.value);
-        const newType = typeSelect.value;
-        const newDueDay = dueDayInput.value.trim() ? parseInt(dueDayInput.value.trim(), 10) : null;
-
-        if (newDesc !== gastoState.desc || newValue !== gastoState.value || newType !== gastoState.type || newDueDay !== gastoState.dueDay) {
-             const updates = {
-                desc: newDesc,
-                value: newValue,
-                type: newType,
-                dueDay: newDueDay
-            };
-            // A função updateGasto já faz o mapeamento para o DB
-            updatePromises.push(updateGasto(gastoId, updates)); 
-        }
-    });
-    
-    await Promise.all(updatePromises);
-    
-    console.log("Todas as alterações foram salvas.");
-    toggleEditMode(false);
-    render(); 
-}
-
-function toggleAddFormCard() {
-    const isHidden = refs.addFormCard.classList.contains('hidden');
-    
-    if (isHidden) {
-        refs.addFormCard.classList.remove('hidden');
-        refs.openAddFormBtn.classList.add('active');
-        refs.manageAccountCard.classList.add('hidden'); // Fecha o outro card
-    } else {
-        refs.addFormCard.classList.add('hidden');
-        refs.openAddFormBtn.classList.remove('active');
-    }
-}
-
-// NOVO: Função para alternar o card "Minha Conta"
-function toggleManageAccountCard() {
-    const isHidden = refs.manageAccountCard.classList.contains('hidden');
-    
-    if (isHidden) {
-        refs.manageAccountCard.classList.remove('hidden');
-        refs.addFormCard.classList.add('hidden'); // Fecha o outro card
-        refs.openAddFormBtn.classList.remove('active');
-        // Limpa mensagens de erro/sucesso antigas
-        showAccountMessage(refs.updateEmailMessage, "", false);
-        showAccountMessage(refs.updatePasswordMessage, "", false);
-    } else {
-        refs.manageAccountCard.classList.add('hidden');
-    }
-}
-
-/* --- NOVAS Funções de Import/Export CSV --- */
-
-function downloadCSV(csvString) {
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'gastos.csv');
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function exportToCSV() {
-    if (state.gastos.length === 0) {
-        alert("Não há dados para exportar.");
-        return;
-    }
-
-    // Mapeia o estado JS (state.gastos) de volta para o formato do DB
-    const dataToExport = state.gastos.map(g => ({
-        description: g.desc,
-        value: g.value,
-        type: g.type,
-        source: g.source,
-        due_day: g.dueDay,
-        is_paid: g.paid
-    }));
-
-    // Usa PapaParse para criar o CSV (lidar com vírgulas e aspas)
-    const csv = Papa.unparse(dataToExport, {
-        header: true,
-    });
-
-    downloadCSV(csv);
-}
-
-function handleImportCSV() {
-    // Aciona o input de arquivo escondido
-    refs.csvFileInput.click();
-}
-
-function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) {
-        return;
-    }
-
-    // Usa PapaParse para ler o arquivo
-    Papa.parse(file, {
-        header: true, // Trata a primeira linha como cabeçalho
-        skipEmptyLines: true,
-        complete: async (results) => {
-            if (!results.data || results.data.length === 0) {
-                alert("Arquivo CSV vazio ou em formato inválido.");
-                return;
-            }
-
-            // Mapeia os dados do CSV para o formato da tabela 'gastos' do Supabase
-            const gastosToInsert = results.data.map(row => ({
-                user_id: currentUser.id,
-                description: row.description || row.Descrição, // Aceita ambos os cabeçalhos
-                value: parseFloat(String(row.value).replace(',', '.')) || 0, // Aceita '.' ou ','
-                type: row.type || row.Tipo,
-                source: row.source || row.Fonte,
-                due_day: parseInt(row.due_day || row['Vencimento (Dia)']) || null,
-                is_paid: (row.is_paid || row.Pago || 'false').toLowerCase() === 'true'
-            })).filter(g => g.description && g.value > 0); // Filtra linhas inválidas
-
-            if (gastosToInsert.length === 0) {
-                alert("Nenhum dado válido encontrado no CSV para importar.");
-                return;
-            }
-
-            if (confirm(`Deseja importar ${gastosToInsert.length} novos registros? (Isso não apaga os registros existentes).`)) {
-                // Envia os dados em lote para o Supabase
-                const { error } = await supabaseClient
-                    .from('gastos')
-                    .insert(gastosToInsert);
-                
-                if (error) {
-                    console.error("Erro ao importar CSV:", error);
-                    alert(`Erro ao importar dados: ${error.message}`);
-                } else {
-                    alert(`${gastosToInsert.length} registros importados com sucesso!`);
-                    await loadInitialData(); // Recarrega os dados
-                }
-            }
-            
-            // Limpa o input de arquivo para permitir importar o mesmo arquivo novamente
-            refs.csvFileInput.value = null;
-        },
-        error: (err) => {
-            alert(`Erro ao ler o arquivo CSV: ${err.message}`);
-            refs.csvFileInput.value = null;
-        }
-    });
-}
-
+/* --- Funções de Import/Export CSV --- */
+function downloadCSV(csv) { const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); const url = URL.createObjectURL(blob); link.href = url; link.download = 'gastos.csv'; link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
+function exportToCSV() { if (state.gastos.length === 0) { alert("Nada a exportar."); return; } const data = state.gastos.map(g => ({ description: g.desc, value: g.value, type: g.type, source: g.source, due_day: g.dueDay, is_paid: g.paid })); const csv = Papa.unparse(data, { header: true }); downloadCSV(csv); }
+function handleImportCSV() { refs.csvFileInput.click(); }
+function handleFileSelect(event) { const file = event.target.files[0]; if (!file) return; Papa.parse(file, { header: true, skipEmptyLines: true, complete: async (res) => { if (!res.data || res.data.length === 0) { alert("CSV inválido."); return; } const inserts = res.data.map(r => ({ user_id: currentUser.id, description: r.description || r.Descrição, value: parseFloat(String(r.value).replace(',', '.')) || 0, type: r.type || r.Tipo, source: r.source || r.Fonte, due_day: parseInt(r.due_day || r['Vencimento (Dia)']) || null, is_paid: (r.is_paid || r.Pago || 'false').toLowerCase() === 'true' })).filter(g => g.description && g.value > 0); if (inserts.length === 0) { alert("Dados inválidos."); return; } if (confirm(`Importar ${inserts.length}?`)) { const { error } = await supabaseClient.from('gastos').insert(inserts); if (error) { console.error("Erro import:", error); alert(`Erro: ${error.message}`); } else { alert(`${inserts.length} importados!`); await loadInitialData(); } } refs.csvFileInput.value = null; }, error: (err) => { alert(`Erro CSV: ${err.message}`); refs.csvFileInput.value = null; } }); }
 
 /* --- Lógica de Eventos --- */
 function setupEventListeners() {
-    // --- Autenticação ---
-    refs.authForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = refs.authEmailInput.value;
-        const password = refs.authPasswordInput.value;
-        
-        if (isLoginMode) {
-            handleLogin(email, password);
-        } else {
-            handleSignUp(email, password);
-        }
-    });
-    
-    refs.authToggleLogin.addEventListener('click', () => toggleAuthMode(true));
-    refs.authToggleRegister.addEventListener('click', () => toggleAuthMode(false));
-    refs.forgotPasswordLink.addEventListener('click', handleForgotPassword); 
-    
-    refs.logoutBtn.addEventListener('click', logout);
-    
-    // --- App (Restante) ---
-    
-    refs.openAddFormBtn.addEventListener('click', toggleAddFormCard);
-    refs.closeAddFormBtn.addEventListener('click', toggleAddFormCard);
-
-    // --- Gerenciamento de Conta ---
-    refs.manageAccountBtn.addEventListener('click', toggleManageAccountCard);
-    refs.closeManageAccountBtn.addEventListener('click', toggleManageAccountCard);
-    refs.updateEmailForm.addEventListener('submit', handleUpdateEmail);
-    refs.updatePasswordForm.addEventListener('submit', handleUpdatePassword);
-
-    // --- Funções de CSV (NOVOS) ---
-    refs.exportCsvBtn.addEventListener('click', exportToCSV);
-    refs.importCsvBtn.addEventListener('click', handleImportCSV);
-    refs.csvFileInput.addEventListener('change', handleFileSelect);
-
-    refs.addForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const novoGasto = {
-            desc: $('#desc').value.trim(), // O estado JS usa 'desc'
-            value: unformatCurrency($('#value').value),
-            type: $('#type').value,
-            source: $('#source').value,
-            dueDay: $('#due-day').value.trim() ? parseInt($('#due-day').value.trim(), 10) : null,
-            paid: false // O estado JS usa 'paid'
-        };
-        
-        // A função addGasto já faz o mapeamento para o DB
-        addGasto(novoGasto); 
-        
-        refs.addForm.reset();
-        toggleAddFormCard(); 
-    });
-
-    refs.salarioInput.addEventListener('input', debouncedSaveProfile);
-    refs.valeInput.addEventListener('input', debouncedSaveProfile);
-    refs.salarioInput.addEventListener('blur', saveProfileData);
-    refs.valeInput.addEventListener('blur', saveProfileData);
-    
-    const moneyInputs = document.querySelectorAll('.money-input, .balance-input');
-    moneyInputs.forEach(input => {
-        input.addEventListener('input', formatCurrencyInput);
-        
-        input.addEventListener('blur', (e) => {
-            if (e.target.value.trim() === '' || unformatCurrency(e.target.value) === 0) {
-                 if(e.target.id === 'salarioInput' || e.target.id === 'valeInput') {
-                     e.target.value = ''; 
-                     saveProfileData();
-                 }
-            }
+    // Verifica se refs.authForm existe antes de adicionar listener
+    if (refs.authForm) {
+        refs.authForm.addEventListener('submit', (e) => { 
+            e.preventDefault(); 
+            if (isLoginMode) handleLogin(refs.authEmailInput.value, refs.authPasswordInput.value); 
+            else handleSignUp(refs.authEmailInput.value, refs.authPasswordInput.value); 
         });
-    });
+    } else {
+        console.error("Elemento #auth-form não encontrado!");
+    }
 
-    refs.btnClear.addEventListener('click', clearAllUserData);
-
-    refs.themeToggle.addEventListener('click', () => {
-        document.documentElement.classList.toggle('dark-mode');
-        const isDarkMode = document.documentElement.classList.contains('dark-mode');
-        localStorage.setItem(STORAGE_THEME_KEY, isDarkMode ? 'dark' : 'light');
-        refs.themeToggle.querySelector('#theme-icon').textContent = isDarkMode ? '☀️' : '🌙';
-    });
-
-    refs.editAllBtn.addEventListener('click', () => toggleEditMode(true));
-    refs.saveAllBtn.addEventListener('click', saveAllChanges);
-    refs.cancelEditBtn.addEventListener('click', () => {
-        toggleEditMode(false);
-        render(); 
-    });
+    if (refs.authToggleLogin) refs.authToggleLogin.addEventListener('click', () => toggleAuthMode(true)); 
+    if (refs.authToggleRegister) refs.authToggleRegister.addEventListener('click', () => toggleAuthMode(false)); 
+    if (refs.forgotPasswordLink) refs.forgotPasswordLink.addEventListener('click', handleForgotPassword); 
+    if (refs.logoutBtn) refs.logoutBtn.addEventListener('click', logout); 
+    if (refs.toggleAuthPassword) refs.toggleAuthPassword.addEventListener('click', () => togglePasswordVisibility('auth-password', 'toggle-auth-password')); 
     
-    refs.removeSelectedBtn.addEventListener('click', removeSelectedGastos);
+    if (refs.openAddFormBtn) refs.openAddFormBtn.addEventListener('click', toggleAddFormCard); 
+    if (refs.closeAddFormBtn) refs.closeAddFormBtn.addEventListener('click', toggleAddFormCard); 
+    if (refs.manageAccountBtn) refs.manageAccountBtn.addEventListener('click', toggleManageAccountCard); 
+    if (refs.closeManageAccountBtn) refs.closeManageAccountBtn.addEventListener('click', toggleManageAccountCard); 
+    if (refs.manageAccountForm) refs.manageAccountForm.addEventListener('submit', handleManageAccountSubmit); 
+    if (refs.toggleUpdatePassword) refs.toggleUpdatePassword.addEventListener('click', () => togglePasswordVisibility('update-password', 'toggle-update-password')); 
     
-    refs.selectAllSalario.addEventListener('change', handleSelectAllSalario);
-    refs.markPaidAllSalario.addEventListener('change', handleMarkPaidAllSalario);
-    refs.selectAllVale.addEventListener('change', handleSelectAllVale);
-    refs.markPaidAllVale.addEventListener('change', handleMarkPaidAllVale);
+    if (refs.addForm) refs.addForm.addEventListener('submit', (e) => { e.preventDefault(); addGasto({ desc: $('#desc').value.trim(), value: unformatCurrency($('#value').value), type: $('#type').value, source: $('#source').value, dueDay: $('#due-day').value.trim() ? parseInt($('#due-day').value.trim(), 10) : null, paid: false }); refs.addForm.reset(); toggleAddFormCard(); });
+    
+    if (refs.salarioInput) { refs.salarioInput.addEventListener('input', debouncedSaveProfile); refs.salarioInput.addEventListener('blur', saveProfileData); }
+    if (refs.valeInput) { refs.valeInput.addEventListener('input', debouncedSaveProfile); refs.valeInput.addEventListener('blur', saveProfileData); }
+    
+    $$('.money-input, .balance-input').forEach(i => { i.addEventListener('input', formatCurrencyInput); i.addEventListener('blur', (e) => { if (e.target.value.trim() === '' || unformatCurrency(e.target.value) === 0) if(e.target.id === 'salarioInput' || e.target.id === 'valeInput') { e.target.value = ''; saveProfileData(); } }); });
+    
+    if (refs.btnClear) refs.btnClear.addEventListener('click', clearAllUserData); 
+    if (refs.themeToggle) refs.themeToggle.addEventListener('click', () => { document.documentElement.classList.toggle('dark-mode'); const iD = document.documentElement.classList.contains('dark-mode'); localStorage.setItem(STORAGE_THEME_KEY, iD ? 'dark' : 'light'); if (refs.themeToggle && refs.themeToggle.querySelector('#theme-icon')) { refs.themeToggle.querySelector('#theme-icon').textContent = iD ? '☀️' : '🌙'; } });
+    
+    if (refs.editAllBtn) refs.editAllBtn.addEventListener('click', () => toggleEditMode(true)); 
+    if (refs.saveAllBtn) refs.saveAllBtn.addEventListener('click', saveAllChanges); 
+    if (refs.cancelEditBtn) refs.cancelEditBtn.addEventListener('click', () => { toggleEditMode(false); render(); });
+    if (refs.removeSelectedBtn) refs.removeSelectedBtn.addEventListener('click', removeSelectedGastos);
+    
+    if(refs.selectAllSalario) refs.selectAllSalario.addEventListener('change', handleSelectAllSalario); if(refs.markPaidAllSalario) refs.markPaidAllSalario.addEventListener('change', handleMarkPaidAllSalario); if(refs.selectAllVale) refs.selectAllVale.addEventListener('change', handleSelectAllVale); if(refs.markPaidAllVale) refs.markPaidAllVale.addEventListener('change', handleMarkPaidAllVale);
+    
+    if (refs.exportCsvBtn) refs.exportCsvBtn.addEventListener('click', exportToCSV); 
+    if (refs.importCsvBtn) refs.importCsvBtn.addEventListener('click', handleImportCSV); 
+    if (refs.csvFileInput) refs.csvFileInput.addEventListener('change', handleFileSelect);
+    
+    if(refs.mobileSelectAllSalarioBtn) refs.mobileSelectAllSalarioBtn.addEventListener('click', () => handleMobileSelectAll('salario')); if(refs.mobileMarkPaidAllSalarioBtn) refs.mobileMarkPaidAllSalarioBtn.addEventListener('click', () => handleMobileMarkPaidAll('salario')); if(refs.mobileSelectAllValeBtn) refs.mobileSelectAllValeBtn.addEventListener('click', () => handleMobileSelectAll('vale')); if(refs.mobileMarkPaidAllValeBtn) refs.mobileMarkPaidAllValeBtn.addEventListener('click', () => handleMobileMarkPaidAll('vale'));
 }
 
 /* --- Inicialização --- */
+function initializeRefs() {
+     refs = {
+        authScreen: $('#auth-screen'), appContainer: $('#app-container'), authForm: $('#auth-form'), authEmailInput: $('#auth-email'), authPasswordInput: $('#auth-password'), authSubmitBtn: $('#auth-submit-btn'), authToggleLogin: $('#auth-toggle-login'), authToggleRegister: $('#auth-toggle-register'), authTitle: $('#auth-title'), authSubtitle: $('#auth-subtitle'), authMessage: $('#auth-message'), forgotPasswordLink: $('#forgot-password-link'), toggleAuthPassword: $('#toggle-auth-password'), logoutBtn: $('#logout-btn'), userInfo: $('#user-info'), userAvatar: $('#user-avatar'), userEmail: $('#user-email'), salarioInput: $('#salarioInput'), valeInput: $('#valeInput'), saldoFinalEl: $('#saldoFinal'), addForm: $('#addForm'), salarioTableBody: $('#salarioTable tbody'), valeTableBody: $('#valeTable tbody'), btnClear: $('#btnClear'), themeToggle: $('#themeToggle'), editAllBtn: $('#editAllBtn'), saveAllBtn: $('#saveAllBtn'), cancelEditBtn: $('#cancelEditBtn'), openAddFormBtn: $('#openAddFormBtn'), closeAddFormBtn: $('#closeAddFormBtn'), addFormCard: $('#addFormCard'), manageAccountBtn: $('#manage-account-btn'), manageAccountCard: $('#manageAccountCard'), closeManageAccountBtn: $('#closeManageAccountBtn'), manageAccountForm: $('#manage-account-form'), updateEmailInput: $('#update-email'), updatePasswordInput: $('#update-password'), manageAccountMessage: $('#manage-account-message'), toggleUpdatePassword: $('#toggle-update-password'), selectionActions: $('#selectionActions'), selectedTotalEl: $('#selectedTotal'), selectedCountEl: $('#selectedCount'), removeSelectedBtn: $('#removeSelectedBtn'), selectAllSalario: $('#selectAllSalario'), markPaidAllSalario: $('#markPaidAllSalario'), selectAllVale: $('#selectAllVale'), markPaidAllVale: $('#markPaidAllVale'), exportCsvBtn: $('#export-csv-btn'), importCsvBtn: $('#import-csv-btn'), csvFileInput: $('#csv-file-input'), mobileSelectAllSalarioBtn: $('#mobileSelectAllSalario'), mobileMarkPaidAllSalarioBtn: $('#mobileMarkPaidAllSalario'), mobileSelectAllValeBtn: $('#mobileSelectAllVale'), mobileMarkPaidAllValeBtn: $('#mobileMarkPaidAllVale'),
+    };
+}
 function init() {
-    const savedTheme = localStorage.getItem(STORAGE_THEME_KEY);
-    if (savedTheme === 'dark') {
-        document.documentElement.classList.add('dark-mode');
-        refs.themeToggle.querySelector('#theme-icon').textContent = '☀️';
-    } else {
-        document.documentElement.classList.remove('dark-mode');
-        refs.themeToggle.querySelector('#theme-icon').textContent = '🌙';
+    initializeRefs(); 
+    const theme = localStorage.getItem(STORAGE_THEME_KEY);
+    if (theme === 'dark') { 
+        document.documentElement.classList.add('dark-mode'); 
+        if (refs.themeToggle && refs.themeToggle.querySelector('#theme-icon')) { refs.themeToggle.querySelector('#theme-icon').textContent = '☀️'; }
+    } else { 
+        document.documentElement.classList.remove('dark-mode'); 
+        if (refs.themeToggle && refs.themeToggle.querySelector('#theme-icon')) { refs.themeToggle.querySelector('#theme-icon').textContent = '🌙'; }
     }
-
     setupEventListeners();
-    
-    // A lógica de renderização e carregamento de dados
-    // agora é disparada pelo 'onAuthStateChanged'
 }
 
-// Inicia a aplicação
-init();
+document.addEventListener('DOMContentLoaded', init);

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Gastos v5 - Email/Senha</title>
+    <title>Controle de Gastos</title>
+    <link rel="icon" type="image/png" href="assets/anexo_1.png">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +21,7 @@
     <div id="auth-screen">
         <div class="login-card">
             <h1 id="auth-title">Entrar</h1>
-            <p id="auth-subtitle">Acesse sua conta para ver seus gastos.</p>
+            <p id="auth-subtitle">Acesse sua conta.</p>
             
             <div class="auth-toggle-buttons">
                 <button id="auth-toggle-login" class="auth-toggle-btn active">Entrar</button>
@@ -32,9 +33,13 @@
                     <label for="auth-email">Email</label>
                     <input id="auth-email" type="email" placeholder="seu@email.com" required />
                 </div>
-                <div class="form-group">
+                <div class="form-group password-input-wrapper"> 
                     <label for="auth-password">Senha</label>
                     <input id="auth-password" type="password" placeholder="••••••••" required />
+                    <span id="toggle-auth-password" class="password-toggle-icon">
+                        <svg id="auth-eye-on-icon" fill="currentColor" aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M3.26 11.6A6.97 6.97 0 0 1 10 6c3.2 0 6.06 2.33 6.74 5.6a.5.5 0 0 0 .98-.2A7.97 7.97 0 0 0 10 5a7.97 7.97 0 0 0-7.72 6.4.5.5 0 0 0 .98.2ZM10 8a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-2.5 3.5a2.5 2.5 0 1 1 5 0 2.5 2.5 0 0 1-5 0Z" fill="currentColor"></path></svg>
+                        <svg id="auth-eye-off-icon" style="display: none;" fill="currentColor" aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10.74 5.07a.5.5 0 0 0-.74-.63l-8 3a.5.5 0 0 0 0 .92l1.6.6a10.02 10.02 0 0 0-1.7 1.83.5.5 0 0 0 .8.6A9.01 9.01 0 0 1 10 9.04V10a1.5 1.5 0 1 1-1.5-1.5h-.04a8.98 8.98 0 0 1-2.6-1.18.5.5 0 0 0-.6-.1l-1.63.82a.5.5 0 0 0-.13.88 6.97 6.97 0 0 0 7.72 4.54A6.97 6.97 0 0 0 16.74 11.6a.5.5 0 0 0-.2-.98 5.99 5.99 0 0 1-5.7-2.92l-.1-.2v-.05A1.5 1.5 0 0 1 12 8.5v-.04a8.98 8.98 0 0 1 4.18-1.18l1.6-.6a.5.5 0 0 0 0-.92l-8-3.08ZM10 12a2.5 2.5 0 0 0 1.95-3.95l-3.9 3.9A2.5 2.5 0 0 0 10 12Z" fill="currentColor"></path></svg>
+                    </span>
                 </div>
                 
                 <div class="form-group-extra">
@@ -70,7 +75,7 @@
 
         <main>
             <div class="card summary-card">
-                <div class="balance-header">
+                 <div class="balance-header">
                     <h2>Resumo Financeiro</h2>
                     <div class="balance-inputs-container">
                         <div class="balance-item">
@@ -96,18 +101,21 @@
                     <div class="table-actions">
                         <button id="import-csv-btn" class="btn ghost">Importar CSV</button>
                         <button id="export-csv-btn" class="btn ghost">Exportar CSV</button>
-                        
-                        <button id="editAllBtn" class="btn ghost">Editar</button>
-                        <button id="saveAllBtn" class="btn primary" style="display: none;">Salvar</button>
-                        <button id="cancelEditBtn" class="btn ghost" style="display: none;">Cancelar</button>
-                        <button id="btnClear" class="btn danger-ghost">Limpar tudo</button>
+                        <button id="editAllBtn" class="btn ghost">Editar</button> 
+                        <button id="saveAllBtn" class="btn primary" style="display: none;">Salvar</button> 
+                        <button id="cancelEditBtn" class="btn ghost" style="display: none;">Cancelar</button> 
+                        <button id="btnClear" class="btn danger-ghost">Limpar tudo</button> 
                     </div>
                 </div>
                 <div class="gasto-tables-grid">
                     <div class="table-container">
                         <h3>Contas Salário</h3>
+                        <div class="mobile-bulk-actions">
+                            <button id="mobileSelectAllSalario" class="btn ghost small mobile-only-btn">Selecionar Todos</button>
+                            <button id="mobileMarkPaidAllSalario" class="btn ghost small mobile-only-btn">Marcar Todos Pagos</button>
+                        </div>
                         <table id="salarioTable">
-                            <thead>
+                           <thead>
                                 <tr>
                                     <th data-label="Sel."><input type="checkbox" id="selectAllSalario" class="select-all-check" title="Selecionar Todos"/></th>
                                     <th data-label="Descrição">Descrição</th>
@@ -123,8 +131,12 @@
                     </div>
                     <div class="table-container">
                         <h3>Contas Vale</h3>
+                         <div class="mobile-bulk-actions">
+                            <button id="mobileSelectAllVale" class="btn ghost small mobile-only-btn">Selecionar Todos</button>
+                            <button id="mobileMarkPaidAllVale" class="btn ghost small mobile-only-btn">Marcar Todos Pagos</button>
+                        </div>
                         <table id="valeTable">
-                            <thead>
+                           <thead>
                                 <tr>
                                     <th data-label="Sel."><input type="checkbox" id="selectAllVale" class="select-all-check" title="Selecionar Todos"/></th>
                                     <th data-label="Descrição">Descrição</th>
@@ -143,17 +155,16 @@
         </main>
         
         <div id="selectionActions" class="selection-actions hidden">
-            <div class="selection-info">
-                <h3>Total Selecionado: <span id="selectedTotal">R$ 0,00</span></h3>
-                <span id="selectedCount" class="muted">0 contas selecionadas</span>
+             <div class="selection-info">
+                 <h3>Total Selecionado: <span id="selectedTotal">R$ 0,00</span></h3>
+                 <span id="selectedCount" class="muted">0 contas selecionadas</span>
             </div>
-            <button id="removeSelectedBtn" class="btn danger-ghost">
-                Remover Selecionadas (0)
+            <button id="removeSelectedBtn" class="btn danger"> 
+                Remover (0)
             </button>
         </div>
 
-        <footer>
-        </footer>
+        <footer></footer>
 
         <button id="openAddFormBtn" class="floating-btn primary">
             <span id="floating-btn-icon">+</span>
@@ -205,31 +216,27 @@
                 <button id="closeManageAccountBtn" class="btn-icon close-btn">✕</button>
             </div>
             
-            <form id="update-email-form">
-                <h3>Alterar E-mail</h3>
-                <div class="form-group">
-                    <label for="update-email">Novo E-mail</label>
-                    <input id="update-email" type="email" placeholder="novo@email.com" required />
+            <form id="manage-account-form">
+                 <div class="form-group">
+                    <label for="update-email">Novo E-mail (opcional)</label>
+                    <input id="update-email" type="email" placeholder="novo@email.com" />
                 </div>
+                 <div class="form-group password-input-wrapper">
+                    <label for="update-password">Nova Senha (opcional, min. 6 caracteres)</label>
+                    <input id="update-password" type="password" placeholder="••••••••" minlength="6" />
+                     <span id="toggle-update-password" class="password-toggle-icon">
+                        <svg id="update-eye-on-icon" fill="currentColor" aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M3.26 11.6A6.97 6.97 0 0 1 10 6c3.2 0 6.06 2.33 6.74 5.6a.5.5 0 0 0 .98-.2A7.97 7.97 0 0 0 10 5a7.97 7.97 0 0 0-7.72 6.4.5.5 0 0 0 .98.2ZM10 8a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-2.5 3.5a2.5 2.5 0 1 1 5 0 2.5 2.5 0 0 1-5 0Z" fill="currentColor"></path></svg>
+                        <svg id="update-eye-off-icon" style="display: none;" fill="currentColor" aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10.74 5.07a.5.5 0 0 0-.74-.63l-8 3a.5.5 0 0 0 0 .92l1.6.6a10.02 10.02 0 0 0-1.7 1.83.5.5 0 0 0 .8.6A9.01 9.01 0 0 1 10 9.04V10a1.5 1.5 0 1 1-1.5-1.5h-.04a8.98 8.98 0 0 1-2.6-1.18.5.5 0 0 0-.6-.1l-1.63.82a.5.5 0 0 0-.13.88 6.97 6.97 0 0 0 7.72 4.54A6.97 6.97 0 0 0 16.74 11.6a.5.5 0 0 0-.2-.98 5.99 5.99 0 0 1-5.7-2.92l-.1-.2v-.05A1.5 1.5 0 0 1 12 8.5v-.04a8.98 8.98 0 0 1 4.18-1.18l1.6-.6a.5.5 0 0 0 0-.92l-8-3.08ZM10 12a2.5 2.5 0 0 0 1.95-3.95l-3.9 3.9A2.5 2.5 0 0 0 10 12Z" fill="currentColor"></path></svg>
+                    </span>
+                </div>
+                
+                <p id="manage-account-message" class="auth-message"></p>
+                
                 <div class="form-actions">
-                    <button type="submit" class="btn primary full-width-btn">Salvar Novo E-mail</button>
+                    <button type="submit" class="btn primary full-width-btn">Salvar Alterações</button>
                 </div>
-                <p id="update-email-message" class="auth-message"></p>
             </form>
             
-            <hr class="divider">
-            
-            <form id="update-password-form">
-                <h3>Alterar Senha</h3>
-                <div class="form-group">
-                    <label for="update-password">Nova Senha</label>
-                    <input id="update-password" type="password" placeholder="••••••••" minlength="6" required />
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn primary full-width-btn">Salvar Nova Senha</button>
-                </div>
-                <p id="update-password-message" class="auth-message"></p>
-            </form>
         </div>
         
     </div>
