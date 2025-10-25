@@ -3,21 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Gastos - Simplificado</title>
-    <link rel="stylesheet" href="style.css?v=1.1">
+    <title>Controle de Gastos v5 - Email/Senha</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
+
+    <div id="auth-screen">
+        <div class="login-card">
+            <h1 id="auth-title">Entrar</h1>
+            <p id="auth-subtitle">Acesse sua conta para ver seus gastos.</p>
+            
+            <div class="auth-toggle-buttons">
+                <button id="auth-toggle-login" class="auth-toggle-btn active">Entrar</button>
+                <button id="auth-toggle-register" class="auth-toggle-btn">Cadastrar</button>
+            </div>
+            
+            <form id="auth-form">
+                <div class="form-group">
+                    <label for="auth-email">Email</label>
+                    <input id="auth-email" type="email" placeholder="seu@email.com" required />
+                </div>
+                <div class="form-group">
+                    <label for="auth-password">Senha</label>
+                    <input id="auth-password" type="password" placeholder="••••••••" required />
+                </div>
+                
+                <p id="auth-message"></p>
+                
+                <div class="form-actions">
+                    <button type="submit" id="auth-submit-btn" class="btn primary full-width-btn">Entrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-container">
         <header>
-            <h1>Controle de Gastos</h1>
+            <div class="header-main">
+                 <h1>Controle de Gastos</h1>
+                 <div id="user-info">
+                    <img id="user-avatar" src="https://placehold.co/40x40/11C76F/FFFFFF?text=U" alt="Avatar">
+                    <span id="user-email">carregando...</span>
+                </div>
+            </div>
             <div class="header-actions">
-                <div class="muted status-text-mobile-hide">Dados salvos no seu navegador</div>
                 <button id="themeToggle" class="btn-icon">
                     <span id="theme-icon">🌙</span>
                 </button>
+                <button id="logout-btn" class="btn danger">Sair</button>
             </div>
         </header>
 
@@ -34,9 +74,9 @@
                             <label for="valeInput">Vale</label>
                             <input type="text" id="valeInput" class="balance-input money-input" autocomplete="off" placeholder="R$ 0,00" />
                         </div>
-                </div>
+                    </div>
                     <div class="balance-total-display">
-                        <div class="muted">Último salvamento: <span id="lastSaved">—</span></div>
+                        <div class="muted">Dados salvos na nuvem</div>
                         <span class="muted">Saldo Final</span>
                         <div class="balance-value" id="saldoFinal">R$ 0,00</div>
                     </div>
@@ -103,8 +143,7 @@
         </div>
 
         <footer>
-            
-        </footer>
+            </footer>
 
         <button id="openAddFormBtn" class="floating-btn primary">
             <span id="floating-btn-icon">+</span>
@@ -151,7 +190,7 @@
         </div>
     </div>
 
-    <script src="main.js"></script>
-
+    <script type="module" src="main.js"></script>
+    
 </body>
 </html>

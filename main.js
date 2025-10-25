@@ -1,21 +1,51 @@
+/* --- Configuração do Supabase --- */
+// Suas chaves já estão configuradas aqui
+const SUPABASE_URL = 'https://edpwhxuefzhvrquvipqd.supabase.co'; 
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkcHdoeHVlZnpodnJxdXZpcHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzNDkyOTgsImV4cCI6MjA3NjkyNTI5OH0.VYi3KLQVpXSJctdbIwkbAc3WqBgmYI3DQLLBPn0fnG8';
+
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
 /* --- Configurações e Variáveis Globais --- */
-const STORAGE_KEY = 'gastos_simplificado_v7_refatorado'; // Alterada para v7 para evitar conflito com a v6
-const OLD_STORAGE_KEY = 'gastos_simplificado_v6';
 const STORAGE_THEME_KEY = 'theme_mode';
+let currentUser = null; 
+let isLoginMode = true; // Controla se o formulário está em modo Login ou Cadastro
 
 let state = {
     gastos: [],
     salarioInicial: 0.00,
-    valeInicial: 0.00
+    valeInicial: 0.00,
+    profileLoaded: false 
 };
 
 let isEditing = false;
-let selectedGastosIds = []; // NOVO: Array para rastrear os IDs dos gastos selecionados
+let selectedGastosIds = [];
 
 /* --- Referências do DOM --- */
 const $ = sel => document.querySelector(sel);
 const $$ = sel => document.querySelectorAll(sel);
 const refs = {
+    // Telas
+    authScreen: $('#auth-screen'),
+    appContainer: $('#app-container'),
+    
+    // Auth
+    authForm: $('#auth-form'),
+    authEmailInput: $('#auth-email'),
+    authPasswordInput: $('#auth-password'),
+    authSubmitBtn: $('#auth-submit-btn'),
+    authToggleLogin: $('#auth-toggle-login'),
+    authToggleRegister: $('#auth-toggle-register'),
+    authTitle: $('#auth-title'),
+    authSubtitle: $('#auth-subtitle'),
+    authMessage: $('#auth-message'),
+    
+    // App
+    logoutBtn: $('#logout-btn'),
+    userInfo: $('#user-info'),
+    userAvatar: $('#user-avatar'),
+    userEmail: $('#user-email'),
     salarioInput: $('#salarioInput'),
     valeInput: $('#valeInput'),
     saldoFinalEl: $('#saldoFinal'),
@@ -23,7 +53,6 @@ const refs = {
     salarioTableBody: $('#salarioTable tbody'),
     valeTableBody: $('#valeTable tbody'),
     btnClear: $('#btnClear'),
-    lastSavedEl: $('#lastSaved'),
     themeToggle: $('#themeToggle'),
     editAllBtn: $('#editAllBtn'),
     saveAllBtn: $('#saveAllBtn'),
@@ -31,18 +60,14 @@ const refs = {
     openAddFormBtn: $('#openAddFormBtn'), 
     closeAddFormBtn: $('#closeAddFormBtn'), 
     addFormCard: $('#addFormCard'),
-    // Referências para o totalizador e remoção em massa
     selectionActions: $('#selectionActions'),
     selectedTotalEl: $('#selectedTotal'),
     selectedCountEl: $('#selectedCount'),
     removeSelectedBtn: $('#removeSelectedBtn'),
-    // NOVOS: Checkboxes do Cabeçalho
     selectAllSalario: $('#selectAllSalario'),
     markPaidAllSalario: $('#markPaidAllSalario'),
     selectAllVale: $('#selectAllVale'),
     markPaidAllVale: $('#markPaidAllVale'),
-    // NOVO: Referência ao ícone do botão flutuante
-    floatingBtnIcon: $('#floating-btn-icon'),
 };
 
 /* --- Funções Auxiliares --- */
@@ -51,11 +76,8 @@ const fmt = v => {
     return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-
 const unformatCurrency = (value) => {
-    // Remove R$, espaços, e converte para formato decimal (ponto)
-    const cleaned = value.replace('R$', '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+    const cleaned = String(value).replace('R$', '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
     return parseFloat(cleaned) || 0;
 };
 
@@ -63,56 +85,330 @@ const formatCurrencyInput = (e) => {
     let value = e.target.value;
     value = value.replace('R$', '').replace(/\s/g, '').replace(/\./g, '').replace(',', '');
     
-    if (value) {
+    if (value && !isNaN(value)) {
         value = (parseInt(value, 10) / 100).toFixed(2);
         value = value.replace('.', ',');
+        
+        // Regex para adicionar ponto de milhar
         value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+        if (value.startsWith('.')) {
+            value = value.substring(1);
+        }
         e.target.value = `R$ ${value}`;
     } else {
-        e.target.value = ''; // Limpa se o valor for zero/vazio
+        e.target.value = ''; 
     }
 };
 
-/* --- Persistência de Dados --- */
-function saveState() {
+let saveProfileTimeout;
+const debouncedSaveProfile = () => {
+    clearTimeout(saveProfileTimeout);
+    saveProfileTimeout = setTimeout(saveProfileData, 1000); 
+};
+
+
+/* --- Lógica de Banco de Dados (Supabase) --- */
+
+async function loadInitialData() {
+    if (!currentUser) return;
+    console.log("Carregando dados do usuário:", currentUser.id);
+    
     try {
-        // Atualiza os valores de entrada antes de salvar
-        state.salarioInicial = unformatCurrency(refs.salarioInput.value) || 0;
-        state.valeInicial = unformatCurrency(refs.valeInput.value) || 0;
-        
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        refs.lastSavedEl.textContent = new Date().toLocaleString('pt-BR');
-    } catch (e) {
-        console.error('Erro ao salvar no localStorage:', e);
-    }
-}
+        const { data: profileData, error: profileError } = await supabaseClient
+            .from('profiles')
+            .upsert({ id: currentUser.id, updated_at: new Date().toISOString() })
+            .select()
+            .single();
 
-function loadState() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
-
-        if (raw) {
-            state = JSON.parse(raw);
-        } else if (oldRaw) {
-            // Migração de dados da versão anterior (v6)
-            const oldState = JSON.parse(oldRaw);
-            state.salarioInicial = oldState.salarioInicial || 0.00;
-            state.valeInicial = oldState.valeInicial || 0.00;
-            
-            // Assume que todos os gastos da v6 já estão no formato esperado
-            state.gastos = oldState.gastos || [];
-
-            // Remove o estado antigo para não migrar novamente
-            localStorage.removeItem(OLD_STORAGE_KEY);
-            console.log("Dados migrados da versão anterior com sucesso!");
+        if (profileError && profileError.code !== '23505') { 
+             console.error('Erro ao carregar/criar perfil:', profileError);
+        } else if (profileData) {
+            state.salarioInicial = profileData.salario_inicial || 0;
+            state.valeInicial = profileData.vale_inicial || 0;
+            state.profileLoaded = true;
+            refs.salarioInput.value = state.salarioInicial > 0 ? fmt(state.salarioInicial) : '';
+            refs.valeInput.value = state.valeInicial > 0 ? fmt(state.valeInicial) : '';
         }
-    } catch (e) {
-        console.error('Erro ao carregar ou migrar estado do localStorage:', e);
+
+        const { data: gastosData, error: gastosError } = await supabaseClient
+            .from('gastos')
+            .select('*')
+            .eq('user_id', currentUser.id);
+
+        if (gastosError) {
+            console.error('Erro ao carregar gastos:', gastosError);
+        } else {
+            state.gastos = gastosData.map(g => ({
+                ...g,
+                dueDay: g.due_day ? parseInt(g.due_day, 10) : null
+            })) || [];
+        }
+        
+    } catch (error) {
+        console.error("Erro geral ao carregar dados:", error);
+    } finally {
+        render(); 
     }
 }
 
-/* --- Funções de Ação em Massa do Cabeçalho --- */
+async function saveProfileData() {
+    if (!currentUser || !state.profileLoaded) return;
+    
+    const newSalario = unformatCurrency(refs.salarioInput.value);
+    const newVale = unformatCurrency(refs.valeInput.value);
+    
+    if (newSalario === state.salarioInicial && newVale === state.valeInicial) {
+        return; 
+    }
+
+    state.salarioInicial = newSalario;
+    state.valeInicial = newVale;
+
+    console.log("Salvando perfil...", { newSalario, newVale });
+    
+    const { error } = await supabaseClient
+        .from('profiles')
+        .update({ 
+            salario_inicial: state.salarioInicial,
+            vale_inicial: state.valeInicial,
+            updated_at: new Date().toISOString() 
+        })
+        .eq('id', currentUser.id);
+    
+    if (error) {
+        console.error("Erro ao salvar perfil:", error);
+    } else {
+        console.log("Perfil salvo com sucesso.");
+        render(); 
+    }
+}
+
+async function addGasto(gasto) {
+    if (!currentUser) return;
+    
+    const gastoData = {
+        user_id: currentUser.id,
+        desc: gasto.desc,
+        value: gasto.value,
+        type: gasto.type,
+        source: gasto.source,
+        due_day: gasto.dueDay || null, 
+        paid: gasto.paid
+    };
+    
+    const { data, error } = await supabaseClient
+        .from('gastos')
+        .insert(gastoData)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error("Erro ao adicionar gasto:", error);
+    } else {
+        console.log("Gasto adicionado:", data);
+        state.gastos.push({
+            ...data,
+            dueDay: data.due_day ? parseInt(data.due_day, 10) : null
+        });
+        render();
+    }
+}
+
+async function updateGasto(gastoId, updates) {
+    const dbUpdates = {};
+    if (updates.hasOwnProperty('desc')) dbUpdates.desc = updates.desc;
+    if (updates.hasOwnProperty('value')) dbUpdates.value = updates.value;
+    if (updates.hasOwnProperty('type')) dbUpdates.type = updates.type;
+    if (updates.hasOwnProperty('source')) dbUpdates.source = updates.source;
+    if (updates.hasOwnProperty('dueDay')) dbUpdates.due_day = updates.dueDay || null;
+    if (updates.hasOwnProperty('paid')) dbUpdates.paid = updates.paid;
+    
+    const { error } = await supabaseClient
+        .from('gastos')
+        .update(dbUpdates)
+        .eq('id', gastoId);
+    
+    if (error) {
+        console.error("Erro ao atualizar gasto:", error);
+    } else {
+        console.log("Gasto atualizado:", gastoId);
+        const index = state.gastos.findIndex(g => g.id === gastoId);
+        if (index > -1) {
+            Object.assign(state.gastos[index], updates);
+            render();
+        }
+    }
+}
+
+async function deleteGasto(gastoId) {
+    const { error } = await supabaseClient
+        .from('gastos')
+        .delete()
+        .eq('id', gastoId);
+
+    if (error) {
+        console.error("Erro ao remover gasto:", error);
+    } else {
+        console.log("Gasto removido:", gastoId);
+        state.gastos = state.gastos.filter(x => x.id !== gastoId);
+        selectedGastosIds = selectedGastosIds.filter(id => id !== gastoId); 
+        render();
+    }
+}
+
+async function deleteSelectedGastos() {
+    if (selectedGastosIds.length === 0) return;
+
+    const { error } = await supabaseClient
+        .from('gastos')
+        .delete()
+        .in('id', selectedGastosIds); 
+
+    if (error) {
+        console.error("Erro ao remover gastos selecionados:", error);
+    } else {
+        console.log("Gastos selecionados removidos.");
+        state.gastos = state.gastos.filter(g => !selectedGastosIds.includes(g.id));
+        selectedGastosIds = []; 
+        render();
+    }
+}
+
+async function clearAllUserData() {
+    if (!currentUser) return;
+    
+    if (!confirm('Atenção! Esta ação irá apagar TODOS os seus gastos e saldos salvos na nuvem. Deseja continuar?')) {
+        return;
+    }
+
+    try {
+        const { error: gastosError } = await supabaseClient
+            .from('gastos')
+            .delete()
+            .eq('user_id', currentUser.id);
+        
+        if (gastosError) throw gastosError;
+
+        const { error: profileError } = await supabaseClient
+            .from('profiles')
+            .update({ salario_inicial: 0, vale_inicial: 0 })
+            .eq('id', currentUser.id);
+
+        if (profileError) throw profileError;
+        
+        console.log("Todos os dados do usuário foram limpos.");
+        
+        state.gastos = [];
+        state.salarioInicial = 0;
+        state.valeInicial = 0;
+        refs.salarioInput.value = '';
+        refs.valeInput.value = '';
+        render();
+        
+    } catch (error) {
+        console.error("Erro ao limpar dados do usuário:", error.message);
+    }
+}
+
+
+/* --- Lógica de Autenticação --- */
+
+function showAuthMessage(message, isError = false) {
+    refs.authMessage.textContent = message;
+    refs.authMessage.className = isError ? 'error' : 'success';
+}
+
+async function handleLogin(email, password) {
+    showAuthMessage("Entrando...", false);
+    const { error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password,
+    });
+    
+    if (error) {
+        console.error('Erro no login:', error.message);
+        showAuthMessage(error.message, true);
+    } else {
+        showAuthMessage("", false);
+        // Sucesso! O onAuthStateChanged vai lidar com a exibição do app
+    }
+}
+
+async function handleSignUp(email, password) {
+    showAuthMessage("Criando conta...", false);
+    const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+    });
+
+    if (error) {
+        console.error('Erro no cadastro:', error.message);
+        showAuthMessage(error.message, true);
+    } else {
+        console.log('Cadastro realizado:', data);
+        showAuthMessage("Cadastro realizado! Verifique seu e-mail para confirmar a conta.", false);
+    }
+}
+
+async function logout() {
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+        console.error('Erro ao sair:', error);
+    } else {
+        currentUser = null;
+        state.gastos = [];
+        state.salarioInicial = 0;
+        state.valeInicial = 0;
+        state.profileLoaded = false;
+    }
+}
+
+function toggleAuthMode(toLogin) {
+    isLoginMode = toLogin;
+    showAuthMessage("", false); // Limpa mensagens
+    
+    if (isLoginMode) {
+        refs.authTitle.textContent = "Entrar";
+        refs.authSubtitle.textContent = "Acesse sua conta para ver seus gastos.";
+        refs.authSubmitBtn.textContent = "Entrar";
+        refs.authToggleLogin.classList.add('active');
+        refs.authToggleRegister.classList.remove('active');
+    } else {
+        refs.authTitle.textContent = "Cadastrar";
+        refs.authSubtitle.textContent = "Crie uma nova conta para salvar seus dados.";
+        refs.authSubmitBtn.textContent = "Criar Conta";
+        refs.authToggleLogin.classList.remove('active');
+        refs.authToggleRegister.classList.add('active');
+    }
+}
+
+// Listener principal de autenticação
+supabaseClient.auth.onAuthStateChanged((event, session) => {
+    if (session && session.user) {
+        currentUser = session.user;
+        console.log('Usuário logado:', currentUser.email);
+        
+        refs.authScreen.style.display = 'none';
+        refs.appContainer.style.display = 'flex';
+        
+        // Atualiza info do usuário (sem avatar do Google)
+        const firstLetter = currentUser.email ? currentUser.email[0].toUpperCase() : 'U';
+        refs.userAvatar.src = `https://placehold.co/40x40/11C76F/FFFFFF?text=${firstLetter}`;
+        refs.userEmail.textContent = currentUser.email;
+        
+        loadInitialData();
+    } else {
+        // Usuário deslogado
+        currentUser = null;
+        console.log('Usuário deslogado.');
+        
+        refs.authScreen.style.display = 'flex';
+        refs.appContainer.style.display = 'none';
+    }
+});
+
+
+/* --- Renderização da Interface (App Principal) --- */
 
 function handleSelectAll(source, isChecked) {
     const sourceGastos = state.gastos.filter(g => g.source === source);
@@ -125,91 +421,80 @@ function handleSelectAll(source, isChecked) {
             selectedGastosIds = selectedGastosIds.filter(id => id !== gasto.id);
         }
     });
-
-    // Re-renderiza para atualizar os checkboxes nas linhas
     render(); 
 }
 
-function handleMarkPaidAll(source, isChecked) {
+async function handleMarkPaidAll(source, isChecked) {
     const sourceGastos = state.gastos.filter(g => g.source === source);
     
     sourceGastos.forEach(gasto => {
         gasto.paid = isChecked;
     });
 
-    // Salva e re-renderiza para atualizar o Saldo Final e os checkboxes nas linhas
-    saveState();
+    const idsToUpdate = sourceGastos.map(g => g.id);
+    if (idsToUpdate.length > 0) {
+         const { error } = await supabaseClient
+            .from('gastos')
+            .update({ paid: isChecked })
+            .in('id', idsToUpdate);
+        
+        if (error) console.error("Erro ao marcar todos como pagos:", error);
+    }
+    
     render(); 
 }
 
-// Funções específicas para os Event Listeners (necessário para evitar loop infinito na render)
 const handleSelectAllSalario = (e) => handleSelectAll('salario', e.target.checked);
 const handleMarkPaidAllSalario = (e) => handleMarkPaidAll('salario', e.target.checked);
 const handleSelectAllVale = (e) => handleSelectAll('vale', e.target.checked);
 const handleMarkPaidAllVale = (e) => handleMarkPaidAll('vale', e.target.checked);
 
-
-/* --- Renderização da Interface --- */
-// NOVO: Função para atualizar o estado do checkbox do cabeçalho
 function updateHeaderCheckboxes(source, type) {
     const isSalario = source === 'salario';
-    const allGastos = state.gastos.filter(g => g.source === source);
+    const allChecks = $$(`#${source}Table tbody .${type === 'select' ? 'select-check' : 'status-check'}`);
+    const allChecked = Array.from(allChecks).every(chk => chk.checked);
+    
+    let headerChk, listener;
     
     if (type === 'select') {
-        const allChecks = $$(`#${source}Table tbody .select-check`);
-        const allChecked = Array.from(allChecks).every(chk => chk.checked);
-        const headerChk = isSalario ? refs.selectAllSalario : refs.selectAllVale;
-        
-        // Remove e Adiciona o listener para evitar loops de renderização
-        headerChk.removeEventListener('change', isSalario ? handleSelectAllSalario : handleSelectAllVale);
-        headerChk.checked = allChecks.length > 0 && allChecked;
-        headerChk.addEventListener('change', isSalario ? handleSelectAllSalario : handleSelectAllVale);
-        headerChk.disabled = allChecks.length === 0 || isEditing;
-    } 
-    
-    if (type === 'paid') {
-        const allChecks = $$(`#${source}Table tbody .status-check`);
-        const allPaid = Array.from(allChecks).every(chk => chk.checked);
-        const headerChk = isSalario ? refs.markPaidAllSalario : refs.markPaidAllVale;
-        
-        // Remove e Adiciona o listener para evitar loops de renderização
-        headerChk.removeEventListener('change', isSalario ? handleMarkPaidAllSalario : handleMarkPaidAllVale);
-        headerChk.checked = allChecks.length > 0 && allPaid;
-        headerChk.addEventListener('change', isSalario ? handleMarkPaidAllSalario : handleMarkPaidAllVale);
-        headerChk.disabled = allChecks.length === 0 || isEditing;
+        headerChk = isSalario ? refs.selectAllSalario : refs.selectAllVale;
+        listener = isSalario ? handleSelectAllSalario : handleSelectAllVale;
+    } else {
+        headerChk = isSalario ? refs.markPaidAllSalario : refs.markPaidAllVale;
+        listener = isSalario ? handleMarkPaidAllSalario : handleMarkPaidAllVale;
     }
+    
+    headerChk.removeEventListener('change', listener);
+    headerChk.checked = allChecks.length > 0 && allChecked;
+    headerChk.addEventListener('change', listener);
+    headerChk.disabled = allChecks.length === 0 || isEditing;
 }
 
-// NOVO: Função para lidar com o clique na linha (toggle expand/collapse)
 function handleRowClick(event) {
-    // Verifica se o clique foi em um elemento interativo (checkbox, input, select ou botão)
     const interactiveElements = ['INPUT', 'BUTTON', 'SELECT', 'A'];
     if (interactiveElements.includes(event.target.tagName) || 
         event.target.closest('.actions-cell') ||
         event.target.closest('.edit-mode')) {
-        return; // Ignora o clique se for em um controle
+        return;
     }
     
     const tr = event.currentTarget;
     const isMobile = window.innerWidth <= 550;
 
-    // Só permite expandir/recolher se estiver no mobile e não estiver no modo de edição
     if (isMobile && !isEditing) {
         tr.classList.toggle('expanded');
     }
 }
 
-
 function createTableRow(gasto) {
     const tr = document.createElement('tr');
     tr.dataset.id = gasto.id;
     
-    // NOVO: Adiciona o listener de clique para expandir/recolher em mobile
     tr.addEventListener('click', handleRowClick);
 
-    // Coluna Sel. (Checkbox de Seleção)
+    // Coluna Sel.
     const tdSelect = document.createElement('td');
-    tdSelect.dataset.label = 'Sel.'; // Adiciona o data-label
+    tdSelect.dataset.label = 'Sel.';
     const chkSelect = document.createElement('input');
     chkSelect.type = 'checkbox';
     chkSelect.className = 'select-check';
@@ -229,45 +514,45 @@ function createTableRow(gasto) {
     tdSelect.appendChild(chkSelect);
     tr.appendChild(tdSelect); 
 
+    // Demais colunas
     const tdDesc = document.createElement('td');
-    tdDesc.dataset.label = 'Descrição'; // Adiciona o data-label
+    tdDesc.dataset.label = 'Descrição';
     tdDesc.innerHTML = `<span class="data-field" data-key="desc">${gasto.desc}</span>`;
     tr.appendChild(tdDesc);
 
     const tdVal = document.createElement('td');
-    tdVal.dataset.label = 'Valor'; // Adiciona o data-label
+    tdVal.dataset.label = 'Valor';
     tdVal.innerHTML = `<span class="data-field" data-key="value">${fmt(gasto.value)}</span>`;
     tr.appendChild(tdVal);
 
     const tdType = document.createElement('td');
-    tdType.dataset.label = 'Tipo'; // Adiciona o data-label
+    tdType.dataset.label = 'Tipo';
     tdType.innerHTML = `<span class="data-field" data-key="type">${gasto.type === 'fixo' ? 'Fixo' : 'Variável'}</span>`;
     tr.appendChild(tdType);
 
     const tdDueDay = document.createElement('td');
-    tdDueDay.dataset.label = 'Vencimento'; // Adiciona o data-label
+    tdDueDay.dataset.label = 'Vencimento';
     tdDueDay.innerHTML = `<span class="data-field" data-key="dueDay">${gasto.dueDay || '-'}</span>`;
     tr.appendChild(tdDueDay);
 
     // Coluna Pago
     const tdPaid = document.createElement('td');
-    tdPaid.dataset.label = 'Pago'; // Adiciona o data-label
+    tdPaid.dataset.label = 'Pago';
     const chk = document.createElement('input');
     chk.type = 'checkbox';
     chk.className = 'status-check';
     chk.checked = gasto.paid;
     chk.disabled = isEditing;
     chk.addEventListener('change', () => {
-        gasto.paid = chk.checked;
-        saveState();
-        render(); // Re-renderiza para atualizar o Saldo Final
-        updateHeaderCheckboxes(gasto.source, 'paid'); 
+        const newPaidStatus = chk.checked;
+        updateGasto(gasto.id, { paid: newPaidStatus }); 
     });
     tdPaid.appendChild(chk);
     tr.appendChild(tdPaid);
 
+    // Coluna Ações
     const tdActions = document.createElement('td');
-    tdActions.dataset.label = 'Ação'; // Adiciona o data-label
+    tdActions.dataset.label = 'Ação';
     tdActions.className = 'actions-cell';
     const btnDelete = document.createElement('button');
     btnDelete.className = 'btn danger-ghost small';
@@ -275,10 +560,7 @@ function createTableRow(gasto) {
     btnDelete.style.display = isEditing ? 'none' : 'inline-block';
     btnDelete.addEventListener('click', () => {
         if (confirm(`Remover "${gasto.desc}"?`)) {
-            state.gastos = state.gastos.filter(x => x.id !== gasto.id);
-            selectedGastosIds = selectedGastosIds.filter(id => id !== gasto.id); 
-            saveState();
-            render();
+            deleteGasto(gasto.id);
         }
     });
     tdActions.appendChild(btnDelete);
@@ -288,11 +570,8 @@ function createTableRow(gasto) {
 }
 
 function render() {
-    // 1. Atualiza o estado das entradas
-    state.salarioInicial = unformatCurrency(refs.salarioInput.value) || 0;
-    state.valeInicial = unformatCurrency(refs.valeInput.value) || 0;
+    if (!currentUser) return; 
 
-    // 2. Cálculo do Saldo Final
     const entradasTotais = state.salarioInicial + state.valeInicial;
     const gastosPagos = state.gastos
         .filter(g => g.paid)
@@ -303,7 +582,6 @@ function render() {
     refs.saldoFinalEl.textContent = fmt(saldoFinal);
     refs.saldoFinalEl.style.color = saldoFinal >= 0 ? 'var(--purple-main)' : 'var(--red-alert)';
 
-    // 3. Renderização das Tabelas
     const gastosSalario = state.gastos.filter(g => g.source === 'salario');
     const gastosVale = state.gastos.filter(g => g.source === 'vale');
 
@@ -316,8 +594,6 @@ function render() {
     refs.valeTableBody.innerHTML = '';
     gastosVale.forEach(gasto => refs.valeTableBody.appendChild(createTableRow(gasto)));
 
-    // 4. Salva o estado e Atualiza o totalizador/checkboxes de cabeçalho
-    saveState();
     updateHeaderCheckboxes('salario', 'select');
     updateHeaderCheckboxes('salario', 'paid');
     updateHeaderCheckboxes('vale', 'select');
@@ -345,14 +621,10 @@ function removeSelectedGastos() {
     if (selectedGastosIds.length === 0) return;
 
     if (confirm(`Tem certeza que deseja remover ${selectedGastosIds.length} conta(s) selecionada(s)?`)) {
-        state.gastos = state.gastos.filter(g => !selectedGastosIds.includes(g.id));
-        selectedGastosIds = []; // Limpa a seleção
-        saveState();
-        render(); // Re-renderiza tudo
+        deleteSelectedGastos(); 
     }
 }
 
-// Lógica de Edição em Massa
 function toggleEditMode(enable) {
     isEditing = enable;
 
@@ -363,25 +635,23 @@ function toggleEditMode(enable) {
     refs.openAddFormBtn.style.display = enable ? 'none' : 'block';
     refs.selectionActions.classList.add('hidden');
 
-    const allGastos = $$('#salarioTable tbody tr, #valeTable tbody tr');
-    allGastos.forEach((tr) => {
-        const gasto = state.gastos.find(g => g.id === tr.dataset.id);
+    const allGastosRows = $$('#salarioTable tbody tr, #valeTable tbody tr');
+    allGastosRows.forEach((tr) => {
+        const gasto = state.gastos.find(g => g.id == tr.dataset.id); 
+        if (!gasto) return;
+        
         const tds = tr.querySelectorAll('td');
         
-        // Coluna Sel.
         tds[0].querySelector('.select-check').disabled = enable;
 
-        // Descrição
         tds[1].innerHTML = enable
             ? `<input type="text" class="edit-mode" data-key="desc" value="${gasto.desc}">`
             : `<span class="data-field" data-key="desc">${gasto.desc}</span>`;
 
-        // Valor
         tds[2].innerHTML = enable
             ? `<input type="text" class="edit-mode money-input" data-key="value" value="${fmt(gasto.value)}">`
             : `<span class="data-field" data-key="value">${fmt(gasto.value)}</span>`;
 
-        // Tipo
         tds[3].innerHTML = enable
             ? `<select class="edit-mode edit-mode-select" data-key="type">
                 <option value="fixo" ${gasto.type === 'fixo' ? 'selected' : ''}>Fixo</option>
@@ -389,19 +659,14 @@ function toggleEditMode(enable) {
               </select>`
             : `<span class="data-field" data-key="type">${gasto.type === 'fixo' ? 'Fixo' : 'Variável'}</span>`;
 
-        // Vencimento
         tds[4].innerHTML = enable
             ? `<input type="number" min="1" max="31" class="edit-mode" data-key="dueDay" value="${gasto.dueDay || ''}">`
             : `<span class="data-field" data-key="dueDay">${gasto.dueDay || '-'}</span>`;
 
-        // Coluna Pago
         tds[5].querySelector('.status-check').disabled = enable;
-
-        // Ações 
         tds[6].style.display = enable ? 'none' : 'table-cell';
     });
     
-    // Desabilita os checkboxes de cabeçalho
     refs.selectAllSalario.disabled = enable;
     refs.markPaidAllSalario.disabled = enable;
     refs.selectAllVale.disabled = enable;
@@ -414,97 +679,118 @@ function toggleEditMode(enable) {
     }
 }
 
-function saveAllChanges() {
-    const allGastos = $$('#salarioTable tbody tr, #valeTable tbody tr');
-    allGastos.forEach((tr) => {
-        const gasto = state.gastos.find(g => g.id === tr.dataset.id);
-        const tds = tr.querySelectorAll('td');
-        const descInput = tds[1].querySelector('[data-key="desc"]');
-        const valueInput = tds[2].querySelector('[data-key="value"]');
-        const typeSelect = tds[3].querySelector('[data-key="type"]');
-        const dueDayInput = tds[4].querySelector('[data-key="dueDay"]');
+async function saveAllChanges() {
+    const allGastosRows = $$('#salarioTable tbody tr, #valeTable tbody tr');
+    const updatePromises = []; 
 
-        if (descInput) gasto.desc = descInput.value.trim();
-        if (valueInput) gasto.value = unformatCurrency(valueInput.value);
-        if (typeSelect) gasto.type = typeSelect.value;
-        if (dueDayInput) gasto.dueDay = dueDayInput.value.trim();
+    allGastosRows.forEach((tr) => {
+        const gastoId = tr.dataset.id;
+        const gastoState = state.gastos.find(g => g.id == gastoId);
+        if (!gastoState) return;
+
+        const descInput = tr.querySelector('[data-key="desc"]');
+        const valueInput = tr.querySelector('[data-key="value"]');
+        const typeSelect = tr.querySelector('[data-key="type"]');
+        const dueDayInput = tr.querySelector('[data-key="dueDay"]');
+
+        const newDesc = descInput.value.trim();
+        const newValue = unformatCurrency(valueInput.value);
+        const newType = typeSelect.value;
+        const newDueDay = dueDayInput.value.trim() ? parseInt(dueDayInput.value.trim(), 10) : null;
+
+        if (newDesc !== gastoState.desc || newValue !== gastoState.value || newType !== gastoState.type || newDueDay !== gastoState.dueDay) {
+             const updates = {
+                desc: newDesc,
+                value: newValue,
+                type: newType,
+                dueDay: newDueDay
+            };
+            updatePromises.push(updateGasto(gastoId, updates)); 
+        }
     });
-    saveState();
+    
+    await Promise.all(updatePromises);
+    
+    console.log("Todas as alterações foram salvas.");
     toggleEditMode(false);
-    render();
+    render(); 
 }
 
-// NOVO: Função de Toggle para o Card de Adição de Conta
 function toggleAddFormCard() {
     const isHidden = refs.addFormCard.classList.contains('hidden');
     
     if (isHidden) {
-        // Abrir
         refs.addFormCard.classList.remove('hidden');
-        refs.openAddFormBtn.classList.add('active'); // Para rotacionar o '+'
+        refs.openAddFormBtn.classList.add('active');
     } else {
-        // Fechar
         refs.addFormCard.classList.add('hidden');
-        refs.openAddFormBtn.classList.remove('active'); // Para resetar o '+'
+        refs.openAddFormBtn.classList.remove('active');
     }
 }
 
 /* --- Lógica de Eventos --- */
 function setupEventListeners() {
-    // 1. Adicionar Gasto (Modal)
-    // Usamos o toggleAddFormCard para abrir/fechar com o botão flutuante
-    refs.openAddFormBtn.addEventListener('click', toggleAddFormCard);
+    // --- Autenticação ---
+    refs.authForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = refs.authEmailInput.value;
+        const password = refs.authPasswordInput.value;
+        
+        if (isLoginMode) {
+            handleLogin(email, password);
+        } else {
+            handleSignUp(email, password);
+        }
+    });
     
-    // Usamos o toggleAddFormCard para fechar com o botão 'X' interno (só visível em desktop)
+    refs.authToggleLogin.addEventListener('click', () => toggleAuthMode(true));
+    refs.authToggleRegister.addEventListener('click', () => toggleAuthMode(false));
+    
+    refs.logoutBtn.addEventListener('click', logout);
+    
+    // --- App (Restante) ---
+    
+    refs.openAddFormBtn.addEventListener('click', toggleAddFormCard);
     refs.closeAddFormBtn.addEventListener('click', toggleAddFormCard);
 
     refs.addForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const novoGasto = {
-            id: uid(),
             desc: $('#desc').value.trim(),
             value: unformatCurrency($('#value').value),
             type: $('#type').value,
             source: $('#source').value,
-            dueDay: $('#due-day').value.trim(),
+            dueDay: $('#due-day').value.trim() ? parseInt($('#due-day').value.trim(), 10) : null,
             paid: false
         };
-        state.gastos.push(novoGasto);
+        
+        addGasto(novoGasto); 
+        
         refs.addForm.reset();
-        
-        // Fecha o card após adicionar
         toggleAddFormCard(); 
-        
-        render();
     });
 
-    // 2. Entradas (Salário/Vale)
-    refs.salarioInput.addEventListener('input', render);
-    refs.valeInput.addEventListener('input', render);
+    refs.salarioInput.addEventListener('input', debouncedSaveProfile);
+    refs.valeInput.addEventListener('input', debouncedSaveProfile);
+    refs.salarioInput.addEventListener('blur', saveProfileData);
+    refs.valeInput.addEventListener('blur', saveProfileData);
     
-    // 3. Formatação de Moeda
     const moneyInputs = document.querySelectorAll('.money-input, .balance-input');
     moneyInputs.forEach(input => {
         input.addEventListener('input', formatCurrencyInput);
         
         input.addEventListener('blur', (e) => {
             if (e.target.value.trim() === '' || unformatCurrency(e.target.value) === 0) {
-                 e.target.value = '';
-                 render();
+                 if(e.target.id === 'salarioInput' || e.target.id === 'valeInput') {
+                     e.target.value = ''; 
+                     saveProfileData();
+                 }
             }
         });
     });
 
-    // 4. Limpar Tudo
-    refs.btnClear.addEventListener('click', () => {
-        if (confirm('Atenção! Esta ação irá apagar todos os gastos e saldos. Deseja continuar?')) {
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(OLD_STORAGE_KEY); 
-            location.reload();
-        }
-    });
+    refs.btnClear.addEventListener('click', clearAllUserData);
 
-    // 5. Toggle Tema
     refs.themeToggle.addEventListener('click', () => {
         document.documentElement.classList.toggle('dark-mode');
         const isDarkMode = document.documentElement.classList.contains('dark-mode');
@@ -512,18 +798,15 @@ function setupEventListeners() {
         refs.themeToggle.querySelector('#theme-icon').textContent = isDarkMode ? '☀️' : '🌙';
     });
 
-    // 6. Botões de edição
     refs.editAllBtn.addEventListener('click', () => toggleEditMode(true));
     refs.saveAllBtn.addEventListener('click', saveAllChanges);
     refs.cancelEditBtn.addEventListener('click', () => {
         toggleEditMode(false);
-        render();
+        render(); 
     });
     
-    // 7. Lógica de Remoção em Massa
     refs.removeSelectedBtn.addEventListener('click', removeSelectedGastos);
     
-    // 8. Checkboxes do Cabeçalho (Select/Paid All)
     refs.selectAllSalario.addEventListener('change', handleSelectAllSalario);
     refs.markPaidAllSalario.addEventListener('change', handleMarkPaidAllSalario);
     refs.selectAllVale.addEventListener('change', handleSelectAllVale);
@@ -532,13 +815,6 @@ function setupEventListeners() {
 
 /* --- Inicialização --- */
 function init() {
-    loadState();
-    
-    // Seta os valores iniciais formatados nos inputs
-    refs.salarioInput.value = state.salarioInicial > 0 ? fmt(state.salarioInicial) : '';
-    refs.valeInput.value = state.valeInicial > 0 ? fmt(state.valeInicial) : '';
-
-    // Configura o tema
     const savedTheme = localStorage.getItem(STORAGE_THEME_KEY);
     if (savedTheme === 'dark') {
         document.documentElement.classList.add('dark-mode');
@@ -549,7 +825,10 @@ function init() {
     }
 
     setupEventListeners();
-    render(); // Primeira renderização para calcular o saldo e exibir as tabelas
+    
+    // A lógica de renderização e carregamento de dados
+    // agora é disparada pelo 'onAuthStateChanged'
 }
 
+// Inicia a aplicação
 init();

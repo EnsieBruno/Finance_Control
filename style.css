@@ -1,5 +1,4 @@
-@import url("media.css");
-
+/* --- Estilos Globais e Tema (PicPay) --- */
 :root {
     /* Cores principais atualizadas para o Verde PicPay */
     --purple-light: #E6F8F0; /* Verde bem claro, usado para BG/Highlight */
@@ -16,6 +15,12 @@
     --border-color: #e2e2e2;
     --body-bg: var(--gray-very-light);
     --text-color: var(--gray-dark);
+
+    /* Aumento do border-radius para um visual mais arredondado */
+    --border-radius-sm: 12px; 
+    --border-radius-md: 16px; 
+    --border-radius-lg: 20px;
+    --border-radius-full: 9999px;
 
     font-family: 'Inter', sans-serif;
     color: var(--text-color);
@@ -55,10 +60,97 @@ body {
     overflow-x: hidden; 
 }
 
-.container {
+/* --- Tela de Autenticação --- */
+#auth-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    text-align: center;
+}
+
+.login-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 40px 30px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 90%;
+}
+
+.login-card h1 {
+    color: var(--purple-main);
+    margin-bottom: 10px;
+    font-size: 1.8rem;
+}
+
+.login-card p {
+    color: var(--gray-medium);
+    margin-bottom: 24px;
+}
+
+/* Estilos dos botões de alternância Login/Cadastro */
+.auth-toggle-buttons {
+    display: flex;
+    background: var(--gray-very-light);
+    border-radius: var(--border-radius-full);
+    padding: 4px;
+    margin-bottom: 24px;
+}
+
+.auth-toggle-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: var(--border-radius-full);
+    background: transparent;
+    color: var(--gray-medium);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.auth-toggle-btn.active {
+    background: var(--purple-main);
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Estilos do formulário de auth */
+#auth-form .form-group {
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+#auth-form .form-actions {
+    margin-top: 20px;
+}
+
+/* Mensagem de erro/sucesso */
+#auth-message {
+    font-size: 0.875rem;
+    margin-top: 16px;
+    min-height: 1.2em; /* Reserva espaço para a mensagem */
+}
+
+#auth-message.error {
+    color: var(--red-alert);
+}
+
+#auth-message.success {
+    color: var(--green-paid);
+}
+
+
+/* --- Container Principal do App --- */
+#app-container {
+    display: none; /* Escondido por padrão, JS mostra ao logar */
     width: 100%; 
     margin: 0 auto;
-    display: flex;
+    /* display: flex;  <-- LINHA REMOVIDA DAQUI (CORREÇÃO) */
     flex-direction: column;
     gap: 20px;
     position: relative; 
@@ -97,6 +189,13 @@ header {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
+    flex-wrap: wrap; /* Para responsividade */
+    gap: 15px;
+}
+        
+.header-main {
+    display: flex;
+    flex-direction: column;
 }
 
 .header-actions {
@@ -105,20 +204,52 @@ header {
     gap: 10px;
 }
 
+#user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card-bg);
+    padding: 8px 12px;
+    border-radius: var(--border-radius-full);
+    border: 1px solid var(--border-color);
+    font-size: 0.875rem;
+}
+
+#user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--purple-main);
+}
+
+#user-email {
+    font-weight: 500;
+    color: var(--gray-dark);
+    max-width: 150px; /* Evita que emails longos quebrem o layout */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .btn-icon {
     background: transparent;
     border: none;
     cursor: pointer;
     font-size: 24px;
     padding: 8px;
-    transition: transform 0.2s;
+    border-radius: var(--border-radius-full); /* Mais arredondado */
+    transition: transform 0.2s, background-color 0.2s;
     color: var(--text-color); 
+}
+.btn-icon:hover {
+    background-color: var(--gray-light);
 }
 
 .card {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: var(--border-radius-lg); /* Mais arredondado */
     padding: 24px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
@@ -136,6 +267,7 @@ header {
     width: 100%;
     gap: 30px; 
     margin-bottom: 0; 
+    flex-wrap: wrap; /* Responsividade */
 }
 
 .balance-header h2 {
@@ -179,7 +311,7 @@ header {
     width: 100%;
     text-align: left;
     padding: 10px;
-    border-radius: 8px;
+    border-radius: var(--border-radius-sm); /* Mais arredondado */
     border: 1px solid var(--border-color);
     background: var(--gray-very-light);
     color: var(--text-color);
@@ -212,7 +344,7 @@ label {
 
 input, select {
     padding: 12px;
-    border-radius: 8px;
+    border-radius: var(--border-radius-sm); /* Mais arredondado */
     border: 1px solid var(--border-color);
     font-size: 1rem;
     background: var(--gray-very-light);
@@ -239,11 +371,16 @@ input:focus, select:focus {
 /* Button Styles */
 .btn {
     padding: 12px 20px;
-    border-radius: 8px;
+    border-radius: var(--border-radius-sm); /* Mais arredondado */
     border: 0;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.btn:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
 }
 
 .btn.primary {
@@ -252,7 +389,7 @@ input:focus, select:focus {
 }
 
 .btn.primary:hover {
-    background: #7308bd;
+    background: #0fa75f; /* Tom mais claro do verde */
 }
 
 .btn.ghost {
@@ -265,6 +402,14 @@ input:focus, select:focus {
     background: var(--gray-light);
 }
 
+.btn.danger {
+    background: var(--red-alert);
+    color: white;
+}
+.btn.danger:hover {
+    background: #c53030;
+}
+
 .btn.danger-ghost {
     background: transparent;
     color: var(--red-alert);
@@ -272,7 +417,7 @@ input:focus, select:focus {
 }
 
 .btn.danger-ghost:hover {
-    background: #ffe3e3;
+    background: rgba(229, 62, 62, 0.1); /* Fundo vermelho claro */
 }
 
 /* --- Floating Widget/Card Styles --- */
@@ -284,16 +429,17 @@ input:focus, select:focus {
     z-index: 1000;
     cursor: pointer;
     /* Circular button */
-    width: 50px; 
-    height: 50px;
+    width: 56px; /* Tamanho PicPay */
+    height: 56px; /* Tamanho PicPay */
     padding: 0;
-    border-radius: 50px;
+    border-radius: var(--border-radius-full); /* Mais arredondado */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     border: none;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 24px;
+    font-size: 28px; /* Ícone maior */
+    font-weight: 300; /* Ícone mais fino */
 }
 .floating-btn span {
     transition: transform 0.3s;
@@ -311,7 +457,7 @@ input:focus, select:focus {
     width: min(90vw, 400px); 
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: var(--border-radius-lg); /* Mais arredondado */
     padding: 24px;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
     z-index: 999;
@@ -373,10 +519,13 @@ input:focus, select:focus {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    flex-wrap: wrap; /* Responsividade */
+    gap: 15px;
 }
 
 .table-actions {
     display: flex;
+    flex-wrap: wrap; /* Responsividade */
     gap: 12px;
 }
 
@@ -395,10 +544,37 @@ thead th {
     font-weight: 600;
 }
 
+/* Cantos arredondados para cabeçalho da tabela */
+thead th:first-child {
+    border-top-left-radius: var(--border-radius-sm);
+}
+thead th:last-child {
+    border-top-right-radius: var(--border-radius-sm);
+}
+
+tbody tr:last-child td:first-child {
+     border-bottom-left-radius: var(--border-radius-sm);
+}
+tbody tr:last-child td:last-child {
+     border-bottom-right-radius: var(--border-radius-sm);
+}
+
 tbody td {
     padding: 14px;
     border-bottom: 1px solid var(--border-color);
     vertical-align: middle;
+    background-color: var(--card-bg); /* Fundo para linhas */
+}
+
+tbody tr:last-child td {
+    border-bottom: 1px solid var(--border-color); /* Garante que a última linha tenha borda */
+}
+
+/* Remove a borda da tabela no mobile, pois o TR vira um card */
+@media (max-width: 550px) {
+     tbody tr:last-child td {
+        border-bottom: none;
+    }
 }
 
 .actions-cell {
@@ -414,6 +590,7 @@ tbody td {
     width: 22px;
     height: 22px;
     cursor: pointer;
+    accent-color: var(--purple-main); /* Estiliza o checkbox */
 }
 
 /* Inline Editing */
@@ -422,12 +599,14 @@ tbody td {
     padding: 6px;
     font-size: 0.875rem;
     box-sizing: border-box;
+    border-radius: var(--border-radius-sm); /* Mais arredondado */
 }
 
 .edit-mode-select {
     width: 100%;
     font-size: 0.875rem;
     padding: 6px;
+    border-radius: var(--border-radius-sm); /* Mais arredondado */
 }
 
 /* Footer */
@@ -470,4 +649,278 @@ footer {
 
 .selection-info .muted {
     font-size: 0.75rem;
+}
+
+/* --- Media Queries (Responsividade) --- */
+
+@media (max-width: 550px) {
+    body {
+        padding: 10px;
+    }
+    
+    #app-container {
+        /* Ensures enough space for the floating action bar/buttons at the bottom on mobile */
+        margin-bottom: 140px; 
+    }
+    
+    /* FIX: Prevents horizontal overflow, ensuring only vertical scroll */
+    body {
+        overflow-x: hidden;
+    }
+    
+    /* Ajustes no Header */
+    header {
+        align-items: flex-start;
+    }
+    .header-main {
+        width: 100%;
+    }
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    #user-info {
+        flex-grow: 1;
+    }
+    #user-email {
+        max-width: 120px; /* Mais curto para mobile */
+    }
+    
+    /* Floating Elements adjustments */
+    .floating-card {
+        right: 5vw; /* Centraliza melhor */
+        bottom: 140px; 
+        width: 90vw; 
+        padding: 24px 15px; /* Adjusting the floating-card padding: */
+    }
+    
+    .floating-btn {
+        right: 20px;
+        bottom: 80px; 
+    }
+    
+    /* SUMMARY CARD REFACTOR (BALANCE) */
+    .balance-header {
+        /* Stacks Title, Inputs, and Total vertically */
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+        width: 100%;
+    }
+
+    .balance-header h2 {
+        width: 100%;
+        text-align: left;
+        order: 1;
+    }
+    
+    .balance-inputs-container {
+        /* Inputs use 100% width and are stacked */
+        flex-direction: column;
+        width: 100%; 
+        order: 2;
+    }
+
+    .balance-item {
+        /* Ensures each input item takes full width */
+        min-width: unset; 
+        width: 100%;
+    }
+    
+    .balance-total-display {
+        /* Final balance at the bottom, left-aligned */
+        width: 100%;
+        text-align: left;
+        order: 3;
+    }
+    /* END OF SUMMARY CARD REFACTOR */
+    
+    /* Add Expense Form */
+    .form-grid {
+        /* Ensures the floating form stacks its fields */
+        grid-template-columns: 1fr;
+    }
+    
+    .form-grid .form-group input, 
+    .form-grid .form-group select {
+        padding: 12px 8px; /* Ajuste leve */
+    }
+
+    /* Table Actions */
+    .table-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .table-actions {
+        /* Table action buttons are stacked */
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+    .table-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    /* Floating Selection Actions Bar */
+    .selection-actions {
+        /* Stacks information and button on the floating bar */
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .selection-info {
+        text-align: center;
+    }
+    #removeSelectedBtn {
+        width: 100%; /* Delete button takes full width */
+    }
+
+    /* --- RESPONSIVIDADE DE TABELA (Card View) --- */
+    
+    .status-text-mobile-hide {
+        display: none;
+    }
+    
+    /* Hide the close button on the floating card for mobile (using floating button for control) */
+    #addFormCard .close-btn {
+        display: none;
+    }
+
+    /* Convert table rows to card-like blocks */
+    #salarioTable, #valeTable {
+        border: none; 
+    }
+
+    /* Hide table header */
+    #salarioTable thead, #valeTable thead {
+        display: none;
+    }
+
+    /* Each row (<tr>) becomes a block/card */
+    #salarioTable tr, #valeTable tr {
+        display: block;
+        margin-bottom: 16px;
+        padding: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md); /* Mais arredondado */
+        background: var(--card-bg);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        cursor: pointer; 
+    }
+    
+    /* Expanded row style */
+    #salarioTable tr.expanded, #valeTable tr.expanded {
+        padding-bottom: 5px; 
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        border-color: var(--purple-main); 
+    }
+
+    /* Each cell (<td>) becomes a block */
+    #salarioTable td, #valeTable td {
+        display: block;
+        text-align: right;
+        padding: 8px 0 !important; 
+        border: none;
+        position: relative;
+    }
+    
+    /* ---------------------------------------------------- */
+    /* COMPACT VIEW VISIBILITY RULES (Only Selection, Description, Value visible) */
+    /* ---------------------------------------------------- */
+    
+    /* Hide non-essential cells in compact mode (Type, Due Date, Paid Status, Actions) */
+    #salarioTable td:nth-child(4), #valeTable td:nth-child(4),
+    #salarioTable td:nth-child(5), #valeTable td:nth-child(5),
+    #salarioTable td:nth-child(6), #valeTable td:nth-child(6),
+    #salarioTable td:nth-child(7), #valeTable td:nth-child(7) {
+        display: none;
+        opacity: 0;
+        height: 0;
+        transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out, display 0.3s;
+    }
+
+    /* Description (2nd cell) separation */
+    #salarioTable td:nth-child(2), #valeTable td:nth-child(2) {
+        border-bottom: 1px dashed var(--border-color);
+        margin-bottom: 8px;
+    }
+
+    /* Value (3rd cell) highlight in compact mode */
+    #salarioTable tr:not(.expanded) td:nth-child(3), #valeTable tr:not(.expanded) td:nth-child(3) {
+        display: block; 
+        opacity: 1;
+        height: auto;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--purple-main);
+        border-bottom: 1px dashed var(--border-color);
+    }
+
+    /* Selection (1st cell) always visible */
+    #salarioTable tr:not(.expanded) td:nth-child(1), #valeTable tr:not(.expanded) td:nth-child(1),
+    #salarioTable tr.expanded td:nth-child(1), #valeTable tr.expanded td:nth-child(1) {
+        display: flex;
+        opacity: 1;
+        height: auto;
+        padding-bottom: 5px !important;
+    }
+
+    /* REVEAL all content when expanded */
+    #salarioTable tr.expanded td, #valeTable tr.expanded td {
+        display: block;
+        opacity: 1;
+        height: auto;
+        font-weight: 400; 
+        font-size: 1rem; 
+        color: var(--text-color);
+        border-bottom: none;
+    }
+
+    /* Paid Status (6th cell) separator in expanded mode */
+    #salarioTable tr.expanded td:nth-child(6), #valeTable tr.expanded td:nth-child(6) {
+        border-bottom: 1px dashed var(--border-color); 
+    }
+
+    /* Actions (7th cell) alignment */
+    #salarioTable tr.expanded td:nth-child(7), #valeTable tr.expanded td:nth-child(7) {
+        text-align: right; 
+    }
+
+    /* ---------------------------------------------------- */
+
+    /* Add column label before cell content using data-label attribute */
+    #salarioTable td::before, #valeTable td::before {
+        content: attr(data-label) ":";
+        float: left;
+        font-weight: 600;
+        color: var(--gray-medium);
+        padding-right: 10px;
+    }
+    
+    /* Styling for Action and Status/Selection columns */
+
+    /* Action (which is at the bottom of the card) */
+    .actions-cell {
+        text-align: right;
+    }
+    .actions-cell::before {
+        display: none; 
+    }
+    
+    /* Checkbox columns (Selection and Paid) display */
+    #salarioTable td:nth-child(1), #valeTable td:nth-child(1),
+    #salarioTable td:nth-child(6), #valeTable td:nth-child(6) {
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px dashed var(--border-color);
+    }
+    
+    /* Ensure edit mode inputs fill space correctly */
+    .edit-mode, .edit-mode-select {
+        width: 60%;
+        max-width: 200px;
+        font-size: 0.875rem;
+    }
 }
