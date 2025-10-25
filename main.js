@@ -976,7 +976,7 @@ function handleFileSelect(event) {
 
             if (confirm(`Deseja importar ${gastosToInsert.length} novos registros? (Isso não apaga os registros existentes).`)) {
                 // Envia os dados em lote para o Supabase
-                const { error }_ = await supabaseClient
+                const { error } = await supabaseClient
                     .from('gastos')
                     .insert(gastosToInsert);
                 
