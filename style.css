@@ -125,6 +125,22 @@ body {
     margin-bottom: 16px;
 }
 
+/* NOVO: Estilo para o link "Esqueci a Senha" */
+.form-group-extra {
+    text-align: right;
+    margin-top: -10px;
+    margin-bottom: 16px;
+}
+.form-group-extra a {
+    font-size: 0.8rem;
+    color: var(--gray-medium);
+    text-decoration: none;
+}
+.form-group-extra a:hover {
+    color: var(--purple-main);
+    text-decoration: underline;
+}
+
 #auth-form .form-actions {
     margin-top: 20px;
 }
@@ -495,6 +511,29 @@ input:focus, select:focus {
     }
 }
 
+/* NOVO: Estilos para o card "Minha Conta" */
+#manageAccountCard h3 {
+    margin-bottom: 10px;
+}
+.divider {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 24px 0;
+}
+/* Re-use auth message styles for account management */
+.auth-message {
+    font-size: 0.875rem;
+    margin-top: 16px;
+    min-height: 1.2em;
+}
+.auth-message.error {
+    color: var(--red-alert);
+}
+.auth-message.success {
+    color: var(--green-paid);
+}
+
+
 /* Tables */
 .tables-section {
     padding: 24px;
@@ -679,6 +718,12 @@ footer {
         width: 100%;
         justify-content: space-between;
     }
+    /* NOVO: Ajusta padding dos botões do header */
+    .header-actions .btn {
+         padding: 10px 15px;
+         font-size: 0.8rem;
+    }
+    
     #user-info {
         flex-grow: 1;
     }
@@ -782,7 +827,7 @@ footer {
     }
     
     /* Hide the close button on the floating card for mobile (using floating button for control) */
-    #addFormCard .close-btn {
+    #addFormCard .close-btn, #manageAccountCard .close-btn {
         display: none;
     }
 
